@@ -12,7 +12,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
 
 
-@CustomTags.inventary
+@CustomTags.typeProduct
 class TypeProductViewSet(viewsets.ModelViewSet):
     queryset = ProductType.objects.all()
     serializer_class = TypeProductSerializer

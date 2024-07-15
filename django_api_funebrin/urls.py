@@ -21,8 +21,9 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('cuentas/', include('accounts.urls')),
-    path('inventario/', include('inventario.urls')),
+    path('', include('accounts.urls')),
+    path('', include('inventario.urls')),
+    path('', include('vehiculos.urls')),
 
     
     path('docs/schema/', SpectacularAPIView.as_view(), name='schema'),
