@@ -15,3 +15,9 @@ class CustomTags:
 
     # Tipo de vehiculos
     typeVehicle = extend_schema(tags=['Tipo de vehiculos'])
+
+    # Cliente
+    cliente = extend_schema(tags=['Clientes'])
+
+    # Tipo Cliente
+    tipoCliente = extend_schema(tags=['Tipo de Cliente'])
