@@ -15,35 +15,6 @@ def custom_filename_funerarias(instance, filename: str):
     timestamp = timezone.now().strftime("%Y-%m-%dT%H-%M-%S")
     return f"funerarias/logos/{timestamp}_{nombre}.{extension}"
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("El campo email es obligatorio")
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-    
-class User(AbstractUser):
-    rut = models.CharField(max_length=16, unique=True)
-    phone = models.CharField(max_length=14, default='Sin número', null=True, blank=True)
-    username = models.CharField(max_length=150, unique=True, default='default_username')
-    email = models.EmailField(unique=True)
-    is_admin = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_worker = models.BooleanField(default=False)
-
-    groups = None
-    user_permissions = None
-
-    objects = UserManager()
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'rut']
-
-    def __str__(self):
-        return self.email
-
 class Funeraria(models.Model):
     rut = models.CharField(max_length=16, unique=True)
     name = models.CharField(max_length=100)
@@ -55,6 +26,56 @@ class Funeraria(models.Model):
 
     def __str__(self):
         return self.name
+    
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("El campo email es obligatorio")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        return self.create_user(email, password, **extra_fields)
+    
+    def create_worker(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_worker', True)
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_admin', False)
+        
+        if not email:
+            raise ValueError("El campo email es obligatorio")
+        
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+class User(AbstractUser):
+    rut = models.CharField(max_length=16, unique=True)
+    phone = models.CharField(max_length=14, default='Sin número', null=True, blank=True)
+    username = models.CharField(max_length=150, unique=True, default='default_username')
+    email = models.EmailField(unique=True)
+    is_admin = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_worker = models.BooleanField(default=False)
+    funeraria = models.ForeignKey('Funeraria', on_delete=models.SET_NULL, null=True, blank=True, related_name='administradores')
+    groups = None
+    user_permissions = None
+
+    objects = UserManager()
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'rut']
+
+    def __str__(self):
+        return self.email
+
 
 class Trabajador(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
