@@ -2,10 +2,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from rest_framework import viewsets, serializers
 from django.views.decorators.csrf import csrf_exempt
-from django.middleware.csrf import get_token
-from .serializers import UserSerializer, FunerariaSerializer, TrabajadorSerializer
+from .serializers import UserSerializer, FunerariaSerializer
 from django.db import IntegrityError
-from .models import User, Funeraria, Trabajador
+from .models import User, Funeraria
 from utils.swagger_utils import CustomTags
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -22,7 +21,6 @@ class LoginView(APIView):
         user = authenticate(request, email=email, password=password)
         if user is not None:
             token, created = Token.objects.get_or_create(user=user)
-            # Agrega la información del usuario que deseas retornar
             user_data = {
                 "id": user.id,
                 "email": user.email,
@@ -48,6 +46,60 @@ def logout_view(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]  # Asegura que solo usuarios autenticados puedan acceder
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            if user.is_admin:
+                return User.objects.all()
+            else:
+                return User.objects.filter(id=user.id)
+        return User.objects.none()  # En caso de no estar autenticado, no retornar nada
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        user = self.request.user
+        funeraria = None
+        if user.is_authenticated:
+            if user.is_admin:
+                funeraria = Funeraria.objects.filter(admin=user).first()
+            elif user.is_worker:
+                funeraria = user.funeraria_id
+        if funeraria:
+            context.update({"funeraria": funeraria})
+        return context
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.is_authenticated and user.is_admin:
+            funeraria = Funeraria.objects.filter(admin=user).first()
+            if funeraria:
+                serializer.save(funeraria_id=funeraria)  # Pasa la instancia de funeraria al serializador
+            else:
+                raise serializers.ValidationError("El administrador no tiene una funeraria asociada.")
+        else:
+            raise serializers.ValidationError("Solo los administradores pueden registrar trabajadores.")
+
+
+    @action(detail=False, methods=['get'], url_path='por-funeraria')
+    def list_trabajadores_por_funeraria(self, request):
+        user = request.user
+        funeraria = None
+
+        if user.is_authenticated:
+            if user.is_admin:
+                funeraria = Funeraria.objects.filter(admin=user).first()
+            elif user.is_worker:
+                funeraria = user.funeraria_id  # Aquí obtienes la instancia de Funeraria a través del ForeignKey
+
+        if not funeraria:
+            return Response({"error": "Funeraria no encontrada para el usuario autenticado."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Utiliza funeraria_id para filtrar
+        trabajadores = User.objects.filter(funeraria_id=funeraria, is_worker=True)
+        serializer = self.get_serializer(trabajadores, many=True)
+        return Response(serializer.data)
 
 @CustomTags.accounts
 class FunerariaViewSet(viewsets.ModelViewSet):
@@ -59,53 +111,3 @@ class FunerariaViewSet(viewsets.ModelViewSet):
             return super().create(request, *args, **kwargs)
         except IntegrityError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-@CustomTags.trabajadores
-class TrabajadorViewSet(viewsets.ModelViewSet):
-    queryset = Trabajador.objects.all()
-    serializer_class = TrabajadorSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_serializer_context(self):
-        # Obtén la funeraria del usuario autenticado
-        user = self.request.user
-        if user.is_anonymous:
-            raise serializers.ValidationError("El usuario debe estar autenticado.")
-
-        funeraria = None
-        if user.is_admin:
-            # El usuario es un administrador, obtener funeraria como admin
-            funeraria = Funeraria.objects.filter(admin=user).first()
-        elif user.is_worker:
-            # El usuario es un trabajador, obtener funeraria desde el campo de trabajador
-            funeraria = user.funeraria
-
-        if not funeraria:
-            raise serializers.ValidationError("Funeraria no encontrada para el usuario autenticado.")
-
-        # Actualiza el contexto con la funeraria
-        context = super().get_serializer_context()
-        context.update({"funeraria": funeraria})
-        return context
-
-    @action(detail=False, methods=['get'], url_path='por-funeraria')
-    def list_trabajadores_por_funeraria(self, request):
-        # Obtener funeraria del usuario autenticado
-        user = request.user
-        funeraria = None
-        if user.is_admin:
-            funeraria = Funeraria.objects.filter(admin=user).first()
-        elif user.is_worker:
-            funeraria = user.funeraria
-
-        if not funeraria:
-            return Response({"error": "Funeraria no encontrada para el usuario autenticado."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Filtra los trabajadores por la funeraria
-        trabajadores = Trabajador.objects.filter(funeraria=funeraria)
-        serializer = self.get_serializer(trabajadores, many=True)
-        return Response(serializer.data)
-
-    def perform_create(self, serializer):
-        # Aquí no necesitas pasar explícitamente funeraria ya que viene en el contexto
-        serializer.save()
