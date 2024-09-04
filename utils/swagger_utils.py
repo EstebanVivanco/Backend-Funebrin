@@ -24,3 +24,8 @@ class CustomTags:
 
     # Tipo Cliente
     tipoCliente = extend_schema(tags=['Tipo de Cliente'])
+    
+    
+    proveedor = extend_schema(tags=['Proveedor'])
+    
+    
