@@ -15,6 +15,9 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)  # Incluir imágenes
+    images_to_remove = serializers.ListField(  # Agregar campo para recibir los IDs de imágenes a eliminar
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
 
     class Meta:
         model = Product

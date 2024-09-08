@@ -14,22 +14,27 @@ class ProductViewSet(viewsets.ModelViewSet):
     parser_classes = (MultiPartParser, FormParser)  # Asegúrate de que estas clases estén aquí
     permission_classes = [IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
-        # Asegurarse de que la funeraria se asigne desde el usuario autenticado
-        funeraria = request.user.funeraria_id
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
 
-        # Agregar funeraria al validated_data antes de crear el producto
-        product_serializer = self.get_serializer(data=request.data)
+        # Guardar el producto
+        product_serializer = self.get_serializer(instance, data=request.data, partial=partial)
         product_serializer.is_valid(raise_exception=True)
-        product = product_serializer.save(funeraria=funeraria)
+        self.perform_update(product_serializer)
 
-        # Manejo de las imágenes
-        images = request.FILES.getlist('images')  # Cambia 'images' por el nombre de tu campo de imágenes
+        # Eliminar imágenes si se envían para eliminar
+        images_to_remove = request.data.get('images_to_remove', '')
+        if images_to_remove:
+            images_to_remove_list = images_to_remove.split(',')
+            ProductImage.objects.filter(id__in=images_to_remove_list, product=instance).delete()
+
+        # Guardar nuevas imágenes
+        images = request.FILES.getlist('images')
         for image in images:
-            ProductImage.objects.create(product=product, image=image)
+            ProductImage.objects.create(product=instance, image=image)
 
-        headers = self.get_success_headers(product_serializer.data)
-        return Response(product_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(product_serializer.data, status=status.HTTP_200_OK)
 
 @CustomTags.proveedor
 class ProveedorViewSet(viewsets.ModelViewSet):
