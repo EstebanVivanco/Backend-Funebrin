@@ -28,4 +28,8 @@ class CustomTags:
     
     proveedor = extend_schema(tags=['Proveedor'])
     
+    documentos = extend_schema(tags=['documentos'])
+    
+    velatorios = extend_schema(tags=['velatorios'])
+    
     

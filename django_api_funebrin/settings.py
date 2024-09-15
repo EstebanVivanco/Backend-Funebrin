@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     'eventos',
     'vehiculos',
     'inventario',
+    'documentos',
+    'velatorios'
 ]
 
 AUTHENTICATION_BACKENDS = (
