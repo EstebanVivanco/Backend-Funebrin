@@ -24,10 +24,10 @@ urlpatterns = [
     path('', include('accounts.urls')),
     path('', include('inventario.urls')),
     path('', include('vehiculos.urls')),
-    path('', include('cliente.urls')),
     path('', include('eventos.urls')),
     path('', include('documentos.urls')),
     path('', include('velatorios.urls')),
+    path('', include('contratos.urls')),
 
     
     path('docs/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -32,4 +32,10 @@ class CustomTags:
     
     velatorios = extend_schema(tags=['velatorios'])
     
+    contrato = extend_schema(tags=['contrato'])
+    
+    cliente = extend_schema(tags=['cliente'])
+    
+    fallecido = extend_schema(tags=['fallecido'])
+    
     

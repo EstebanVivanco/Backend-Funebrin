@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'vehiculos',
     'inventario',
     'documentos',
-    'velatorios'
+    'velatorios',
+    'contratos'
 ]
 
 AUTHENTICATION_BACKENDS = (
