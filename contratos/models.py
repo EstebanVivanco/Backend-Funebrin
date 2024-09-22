@@ -4,6 +4,7 @@ from inventario.models import Product
 from vehiculos.models import Vehicle
 from velatorios.models import SalaVelatorio
 from storages.backends.s3boto3 import S3Boto3Storage
+from django.utils import timezone
 
 # Configuración para almacenar archivos en S3 (o local si lo prefieres)
 class MediaStorage(S3Boto3Storage):
