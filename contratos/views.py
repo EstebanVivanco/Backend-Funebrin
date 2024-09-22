@@ -6,6 +6,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
+from django.db.models import Sum
+from django.utils.timezone import now
+from django.db.models.functions import TruncMonth
 
 class FallecidoViewSet(viewsets.ModelViewSet):
     queryset = Fallecido.objects.all()
@@ -22,6 +25,7 @@ class FallecidoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
+    
 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
@@ -96,3 +100,86 @@ class ContratoViewSet(viewsets.ModelViewSet):
         fallecido, created = Fallecido.objects.get_or_create(rut=rut, defaults=fallecido_data)
         serializer = FallecidoSerializer(fallecido)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+    
+        # Ruta para obtener el total del valor de contratos por estado de pago en el mes actual basado en la funeraria
+    @action(detail=False, methods=['get'], url_path='total-valor-mes-actual')
+    def total_valor_mes_actual(self, request):
+        funeraria_id = request.user.funeraria_id_id
+        today = now().date()
+        current_month = today.month
+        current_year = today.year
+
+        # Filtrar contratos por el mes y año actual y la funeraria del usuario
+        contratos_pendientes = Contrato.objects.filter(
+            fecha_creacion__month=current_month,
+            fecha_creacion__year=current_year,
+            funeraria_id=funeraria_id,
+            estado_pago='pendiente'
+        ).aggregate(total_pendiente=Sum('valor_servicio'))
+
+        contratos_pagados = Contrato.objects.filter(
+            fecha_creacion__month=current_month,
+            fecha_creacion__year=current_year,
+            funeraria_id=funeraria_id,
+            estado_pago='pagado'
+        ).aggregate(total_pagado=Sum('valor_servicio'))
+
+        contratos_no_pagados = Contrato.objects.filter(
+            fecha_creacion__month=current_month,
+            fecha_creacion__year=current_year,
+            funeraria_id=funeraria_id,
+            estado_pago='no_pagado'
+        ).aggregate(total_no_pagado=Sum('valor_servicio'))
+
+        return Response({
+            'total_pendiente': contratos_pendientes['total_pendiente'] or 0,
+            'total_pagado': contratos_pagados['total_pagado'] or 0,
+            'total_no_pagado': contratos_no_pagados['total_no_pagado'] or 0,
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='total-valor-por-mes-ano-actual')
+    def total_valor_por_mes_ano_actual(self, request):
+        funeraria_id = request.user.funeraria_id_id
+        today = now().date()
+        current_year = today.year
+
+        # Filtrar contratos por el año actual, la funeraria y agrupar por mes
+        contratos_por_mes_pendientes = Contrato.objects.filter(
+            fecha_creacion__year=current_year,
+            funeraria_id=funeraria_id,
+            estado_pago='pendiente'
+        ).annotate(mes=TruncMonth('fecha_creacion')).values('mes').annotate(
+            total_pendiente=Sum('valor_servicio')
+        ).order_by('mes')
+
+        contratos_por_mes_pagados = Contrato.objects.filter(
+            fecha_creacion__year=current_year,
+            funeraria_id=funeraria_id,
+            estado_pago='pagado'
+        ).annotate(mes=TruncMonth('fecha_creacion')).values('mes').annotate(
+            total_pagado=Sum('valor_servicio')
+        ).order_by('mes')
+
+        contratos_por_mes_no_pagados = Contrato.objects.filter(
+            fecha_creacion__year=current_year,
+            funeraria_id=funeraria_id,
+            estado_pago='no_pagado'
+        ).annotate(mes=TruncMonth('fecha_creacion')).values('mes').annotate(
+            total_no_pagado=Sum('valor_servicio')
+        ).order_by('mes')
+
+        # Unificar los resultados por mes
+        resultados = []
+        for mes in contratos_por_mes_pagados:
+            total_pendiente = next((item['total_pendiente'] for item in contratos_por_mes_pendientes if item['mes'] == mes['mes']), 0)
+            total_no_pagado = next((item['total_no_pagado'] for item in contratos_por_mes_no_pagados if item['mes'] == mes['mes']), 0)
+            resultados.append({
+                'mes': mes['mes'],
+                'total_pagado': mes['total_pagado'],
+                'total_pendiente': total_pendiente,
+                'total_no_pagado': total_no_pagado,
+            })
+
+        return Response(resultados, status=status.HTTP_200_OK)

@@ -12,7 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-
+from django.db.models import Sum
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -100,6 +100,29 @@ class UserViewSet(viewsets.ModelViewSet):
         trabajadores = User.objects.filter(funeraria_id=funeraria, is_worker=True)
         serializer = self.get_serializer(trabajadores, many=True)
         return Response(serializer.data)
+    
+    
+    # Nueva acción para obtener el total de sueldos de los trabajadores de la funeraria
+    @action(detail=False, methods=['get'], url_path='total-sueldos-funeraria')
+    def total_sueldos_funeraria(self, request):
+        user = request.user
+        funeraria = None
+
+        if user.is_authenticated:
+            if user.is_admin:
+                funeraria = Funeraria.objects.filter(admin=user).first()
+            elif user.is_worker:
+                funeraria = user.funeraria_id
+
+        if not funeraria:
+            return Response({"error": "Funeraria no encontrada para el usuario autenticado."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Filtrar los trabajadores de la funeraria
+        total_sueldos = User.objects.filter(funeraria_id=funeraria, is_worker=True).aggregate(total_sueldos=Sum('sueldo'))
+
+        return Response({
+            "total_sueldos": total_sueldos['total_sueldos'] or 0  # Retorna 0 si no hay sueldos
+        }, status=status.HTTP_200_OK)
 
 @CustomTags.accounts
 class FunerariaViewSet(viewsets.ModelViewSet):
