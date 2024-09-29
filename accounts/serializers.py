@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Funeraria, User
+from .models import Funeraria, User, Servicio
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,15 +19,21 @@ class UserSerializer(serializers.ModelSerializer):
         
         return user
 
+class ServicioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Servicio
+        fields = ['id', 'nombre', 'url_imagen', 'descripcion']
+
 class FunerariaSerializer(serializers.ModelSerializer):
     admin_email = serializers.EmailField(write_only=True)
     admin_password = serializers.CharField(write_only=True)
     admin_rut = serializers.CharField(write_only=True)
     admin_phone = serializers.CharField(write_only=True)
+    servicios = serializers.PrimaryKeyRelatedField(many=True, queryset=Servicio.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Funeraria
-        fields = ['rut', 'name', 'location', 'phone', 'email', 'logo', 'admin_email', 'admin_password', 'admin_rut', 'admin_phone']
+        fields = ['rut', 'name', 'location', 'phone', 'email', 'logo','phonefijo','admin_email', 'admin_password', 'admin_rut', 'admin_phone', 'servicios']
 
     def create(self, validated_data):
         admin_email = validated_data.pop('admin_email')
@@ -38,6 +44,7 @@ class FunerariaSerializer(serializers.ModelSerializer):
         if User.objects.filter(rut=admin_rut).exists():
             raise serializers.ValidationError("Ya existe un usuario con este RUT.")
 
+        # Crear administrador
         admin_user = User.objects.create_user(
             username=admin_email,
             email=admin_email,
@@ -48,8 +55,16 @@ class FunerariaSerializer(serializers.ModelSerializer):
             is_admin=True,
         )
 
+        # Extraer servicios antes de crear la funeraria
+        servicios_data = validated_data.pop('servicios', [])
+
+        # Crear funeraria
         funeraria = Funeraria.objects.create(admin=admin_user, **validated_data)
 
+        # Asignar servicios a la funeraria
+        funeraria.servicios.set(servicios_data)
+
+        # Asignar funeraria al administrador
         admin_user.funeraria_id = funeraria
         admin_user.save()
 

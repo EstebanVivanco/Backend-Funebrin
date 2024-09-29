@@ -4,7 +4,7 @@ from .models import Contrato, Cliente, Fallecido
 from .serializers import ContratoSerializer, ClienteSerializer, FallecidoSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
@@ -12,6 +12,7 @@ from datetime import datetime
 from django.utils.timezone import now
 import calendar
 from django.utils.translation import gettext as _
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class FallecidoViewSet(viewsets.ModelViewSet):
     queryset = Fallecido.objects.all()
@@ -53,6 +54,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
     queryset = Contrato.objects.all()
     serializer_class = ContratoSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Incluir JSONParser
 
     def get_serializer_context(self):
         return {'request': self.request}
@@ -61,6 +63,33 @@ class ContratoViewSet(viewsets.ModelViewSet):
         funeraria_id = self.request.user.funeraria_id_id
         serializer.save(funeraria_id=funeraria_id)
 
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def perform_create(self, serializer):
+        funeraria_id = self.request.user.funeraria_id_id
+        serializer.save(funeraria_id=funeraria_id)
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def perform_create(self, serializer):
+        funeraria_id = self.request.user.funeraria_id_id
+        serializer.save(funeraria_id=funeraria_id)
+        
+    # Nueva acción personalizada para listar contratos con es_traslado=True y filtrados por funeraria_id
+    @action(detail=False, methods=['get'], url_path='traslados')
+    def listar_traslados(self, request):
+        # Obtener funeraria del usuario autenticado
+        funeraria_id = self.request.user.funeraria_id_id
+        
+        # Filtrar contratos por funeraria_id y es_traslado=True
+        contratos_traslado = Contrato.objects.filter(funeraria_id=funeraria_id, es_traslado=True)
+        
+        # Serializar los contratos filtrados
+        serializer = self.get_serializer(contratos_traslado, many=True)
+        return Response(serializer.data)
+    
     @action(detail=False, methods=['post'], url_path='buscar-o-crear-cliente')
     def buscar_o_crear_cliente(self, request):
         rut = request.data.get('rut')

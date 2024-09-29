@@ -15,18 +15,28 @@ def custom_filename_funerarias(instance, filename: str):
     timestamp = timezone.now().strftime("%Y-%m-%dT%H-%M-%S")
     return f"funerarias/logos/{timestamp}_{nombre}.{extension}"
 
+class Servicio(models.Model):
+    nombre = models.CharField(max_length=100)
+    url_imagen = models.CharField(max_length=255, null=True, blank=True)
+    descripcion = models.TextField()
+
+    def __str__(self):
+        return self.nombre
+
 class Funeraria(models.Model):
     rut = models.CharField(max_length=16, unique=True)
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=255)
     phone = models.CharField(max_length=14, default='Sin número', null=True, blank=True)
+    phonefijo = models.CharField(max_length=14, default='Sin número', null=True, blank=True)
     email = models.EmailField()
     logo = models.ImageField(storage=MediaStorage(), upload_to=custom_filename_funerarias, null=True, blank=True)
     admin = models.OneToOneField('User', on_delete=models.CASCADE, related_name='funeraria_admin')
+    servicios = models.ManyToManyField('Servicio', related_name='funerarias', blank=True)
 
     def __str__(self):
         return self.name
-    
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:

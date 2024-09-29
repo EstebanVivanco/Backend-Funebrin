@@ -6,6 +6,7 @@ from .views import LoginView
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet, basename='users')
 router.register(r'funerarias', views.FunerariaViewSet, basename='funerarias')
+router.register(r'servicios', views.ServicioViewSet, basename='servicios')  # Nueva ruta para los servicios
 
 urlpatterns = [
     path('cuentas/', include(router.urls)),

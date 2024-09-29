@@ -2,9 +2,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from rest_framework import viewsets, serializers
 from django.views.decorators.csrf import csrf_exempt
-from .serializers import UserSerializer, FunerariaSerializer
+from .serializers import UserSerializer, FunerariaSerializer, ServicioSerializer
 from django.db import IntegrityError
-from .models import User, Funeraria
+from .models import User, Funeraria, Servicio
 from utils.swagger_utils import CustomTags
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.db.models import Sum
+
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -46,7 +47,7 @@ def logout_view(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]  # Asegura que solo usuarios autenticados puedan acceder
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -55,7 +56,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 return User.objects.all()
             else:
                 return User.objects.filter(id=user.id)
-        return User.objects.none()  # En caso de no estar autenticado, no retornar nada
+        return User.objects.none()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -75,12 +76,11 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.is_authenticated and user.is_admin:
             funeraria = Funeraria.objects.filter(admin=user).first()
             if funeraria:
-                serializer.save(funeraria_id=funeraria)  # Pasa la instancia de funeraria al serializador
+                serializer.save(funeraria_id=funeraria)
             else:
                 raise serializers.ValidationError("El administrador no tiene una funeraria asociada.")
         else:
             raise serializers.ValidationError("Solo los administradores pueden registrar trabajadores.")
-
 
     @action(detail=False, methods=['get'], url_path='por-funeraria')
     def list_trabajadores_por_funeraria(self, request):
@@ -91,18 +91,15 @@ class UserViewSet(viewsets.ModelViewSet):
             if user.is_admin:
                 funeraria = Funeraria.objects.filter(admin=user).first()
             elif user.is_worker:
-                funeraria = user.funeraria_id  # Aquí obtienes la instancia de Funeraria a través del ForeignKey
+                funeraria = user.funeraria_id
 
         if not funeraria:
             return Response({"error": "Funeraria no encontrada para el usuario autenticado."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Utiliza funeraria_id para filtrar
         trabajadores = User.objects.filter(funeraria_id=funeraria, is_worker=True)
         serializer = self.get_serializer(trabajadores, many=True)
         return Response(serializer.data)
-    
-    
-    # Nueva acción para obtener el total de sueldos de los trabajadores de la funeraria
+
     @action(detail=False, methods=['get'], url_path='total-sueldos-funeraria')
     def total_sueldos_funeraria(self, request):
         user = request.user
@@ -117,11 +114,10 @@ class UserViewSet(viewsets.ModelViewSet):
         if not funeraria:
             return Response({"error": "Funeraria no encontrada para el usuario autenticado."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Filtrar los trabajadores de la funeraria
         total_sueldos = User.objects.filter(funeraria_id=funeraria, is_worker=True).aggregate(total_sueldos=Sum('sueldo'))
 
         return Response({
-            "total_sueldos": total_sueldos['total_sueldos'] or 0  # Retorna 0 si no hay sueldos
+            "total_sueldos": total_sueldos['total_sueldos'] or 0
         }, status=status.HTTP_200_OK)
 
 @CustomTags.accounts
@@ -134,3 +130,7 @@ class FunerariaViewSet(viewsets.ModelViewSet):
             return super().create(request, *args, **kwargs)
         except IntegrityError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class ServicioViewSet(viewsets.ModelViewSet):
+    queryset = Servicio.objects.all()
+    serializer_class = ServicioSerializer
