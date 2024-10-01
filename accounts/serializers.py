@@ -24,6 +24,14 @@ class ServicioSerializer(serializers.ModelSerializer):
         model = Servicio
         fields = ['id', 'nombre', 'url_imagen', 'descripcion']
 
+    def create(self, validated_data):
+        # Si es necesario, aquí puedes agregar la lógica de procesamiento de la imagen
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Si es necesario, aquí puedes agregar la lógica de procesamiento de la imagen
+        return super().update(instance, validated_data)
+
 class FunerariaSerializer(serializers.ModelSerializer):
     admin_email = serializers.EmailField(write_only=True)
     admin_password = serializers.CharField(write_only=True)

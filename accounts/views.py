@@ -13,7 +13,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.db.models import Sum
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from inventario.models import Product
 from inventario.serializers import ProductSerializer
@@ -139,11 +139,25 @@ class FunerariaViewSet(viewsets.ModelViewSet):
             return super().create(request, *args, **kwargs)
         except IntegrityError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+    @action(detail=True, methods=['get'], url_path='servicios')
+    def obtener_servicios(self, request, pk=None):
+        try:
+            funeraria = Funeraria.objects.get(id=pk)
+        except Funeraria.DoesNotExist:
+            return Response({'error': 'Funeraria no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Obtener los servicios asociados a la funeraria
+        servicios = funeraria.servicios.all()
+        serializer = ServicioSerializer(servicios, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ServicioViewSet(viewsets.ModelViewSet):
     queryset = Servicio.objects.all()
     serializer_class = ServicioSerializer
-
+    parser_classes = [MultiPartParser, FormParser]
 
 class FunerariaDataView(APIView):
     # Eliminar el uso de IsAuthenticated para permitir el acceso sin protección
@@ -156,10 +170,12 @@ class FunerariaDataView(APIView):
         # Obtener los vehículos e inventario asociados a la funeraria
         vehicles = Vehicle.objects.filter(funeraria=funeraria)
         products = Product.objects.filter(funeraria=funeraria)
+        services = funeraria.servicios.all()
 
         vehicle_serializer = VehicleSerializer(vehicles, many=True)
         product_serializer = ProductSerializer(products, many=True)
-
+        servicio_serializer = ServicioSerializer(services, many=True)
+        
         data = {
             'funeraria': {
                 'id': funeraria.id,
@@ -169,6 +185,7 @@ class FunerariaDataView(APIView):
                 'phone': funeraria.phone,
                 'email': funeraria.email,
                 # Agrega otros campos necesarios de la funeraria
+                 'servicios': servicio_serializer.data,
             },
             'vehicles': vehicle_serializer.data,
             'inventory': product_serializer.data,

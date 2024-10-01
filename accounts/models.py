@@ -17,7 +17,7 @@ def custom_filename_funerarias(instance, filename: str):
 
 class Servicio(models.Model):
     nombre = models.CharField(max_length=100)
-    url_imagen = models.CharField(max_length=255, null=True, blank=True)
+    url_imagen = models.ImageField(storage=MediaStorage(), upload_to='servicios/', null=True, blank=True)
     descripcion = models.TextField()
 
     def __str__(self):
