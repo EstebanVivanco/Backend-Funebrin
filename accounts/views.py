@@ -14,6 +14,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.db.models import Sum
 
+
+from inventario.models import Product
+from inventario.serializers import ProductSerializer
+
+from vehiculos.models import Vehicle
+from vehiculos.serializers import VehicleSerializer
+
+from accounts.models import Funeraria
+
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -134,3 +143,35 @@ class FunerariaViewSet(viewsets.ModelViewSet):
 class ServicioViewSet(viewsets.ModelViewSet):
     queryset = Servicio.objects.all()
     serializer_class = ServicioSerializer
+
+
+class FunerariaDataView(APIView):
+    # Eliminar el uso de IsAuthenticated para permitir el acceso sin protección
+    def get(self, request, funeraria_id):
+        try:
+            funeraria = Funeraria.objects.get(id=funeraria_id)
+        except Funeraria.DoesNotExist:
+            return Response({'error': 'Funeraria no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Obtener los vehículos e inventario asociados a la funeraria
+        vehicles = Vehicle.objects.filter(funeraria=funeraria)
+        products = Product.objects.filter(funeraria=funeraria)
+
+        vehicle_serializer = VehicleSerializer(vehicles, many=True)
+        product_serializer = ProductSerializer(products, many=True)
+
+        data = {
+            'funeraria': {
+                'id': funeraria.id,
+                'rut': funeraria.rut,
+                'name': funeraria.name,
+                'location': funeraria.location,
+                'phone': funeraria.phone,
+                'email': funeraria.email,
+                # Agrega otros campos necesarios de la funeraria
+            },
+            'vehicles': vehicle_serializer.data,
+            'inventory': product_serializer.data,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
