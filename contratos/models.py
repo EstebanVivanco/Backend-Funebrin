@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Funeraria, User
+from accounts.models import Funeraria, User, Servicio
 from inventario.models import Product
 from vehiculos.models import Vehicle
 from velatorios.models import SalaVelatorio
@@ -79,3 +79,23 @@ class Contrato(models.Model):
 
     def __str__(self):
         return f"Contrato {self.id} - Cliente: {self.cliente} - Fallecido: {self.fallecido}"
+
+
+class Cotizacion(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado')
+    ]
+
+    funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
+    nombre_cliente = models.CharField(max_length=255)
+    email_cliente = models.EmailField()
+    telefono_cliente = models.CharField(max_length=20)
+    descripcion = models.TextField()
+    servicios = models.ManyToManyField(Servicio, related_name='cotizaciones')  # Relación con el modelo Servicio
+    estado = models.CharField(max_length=50, choices=ESTADO_CHOICES, default='pendiente')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Cotización de {self.nombre_cliente} - Estado: {self.estado}"

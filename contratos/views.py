@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Contrato, Cliente, Fallecido
 from .serializers import ContratoSerializer, ClienteSerializer, FallecidoSerializer
 from rest_framework.response import Response
@@ -13,7 +13,43 @@ from django.utils.timezone import now
 import calendar
 from django.utils.translation import gettext as _
 from rest_framework.parsers import MultiPartParser, FormParser
+from .models import Cotizacion
+from .serializers import CotizacionSerializer
+class CotizacionViewSet(viewsets.ModelViewSet):
+        queryset = Cotizacion.objects.all()
+        serializer_class = CotizacionSerializer
 
+        def get_permissions(self):
+            if self.action in ['create']:
+                # Permitir a clientes no registrados crear una cotización
+                return [AllowAny()]
+            return [IsAuthenticated()]
+
+        def perform_create(self, serializer):
+            funeraria = self.request.data.get('funeraria')
+            serializer.save(funeraria_id=funeraria)
+
+        @action(detail=True, methods=['patch'], url_path='cambiar-estado')
+        def cambiar_estado(self, request, pk=None):
+            cotizacion = self.get_object()
+            nuevo_estado = request.data.get('estado')
+            if nuevo_estado in ['pendiente', 'aprobado', 'rechazado']:
+                cotizacion.estado = nuevo_estado
+                cotizacion.save()
+                return Response({"estado": cotizacion.estado}, status=status.HTTP_200_OK)
+            return Response({"detail": "Estado inválido"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        @action(detail=False, methods=['get'], url_path='por-funeraria')
+        def listar_por_funeraria(self, request):
+            # Obtener funeraria del usuario autenticado
+            funeraria_id = request.user.funeraria_id_id
+
+            # Filtrar cotizaciones por funeraria_id
+            cotizaciones = Cotizacion.objects.filter(funeraria_id=funeraria_id)
+            serializer = CotizacionSerializer(cotizaciones, many=True, context={'request': request})
+            return Response(serializer.data)
+        
 class FallecidoViewSet(viewsets.ModelViewSet):
     queryset = Fallecido.objects.all()
     serializer_class = FallecidoSerializer
@@ -223,3 +259,5 @@ class ContratoViewSet(viewsets.ModelViewSet):
             })
 
         return Response(resultados, status=status.HTTP_200_OK)
+
+

@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from .models import Cliente, Fallecido, Contrato
+from .models import Cliente, Fallecido, Contrato, Cotizacion
 from velatorios.models import SalaVelatorio
 from inventario.models import Product
 from vehiculos.models import Vehicle
-from accounts.models import User
+from accounts.models import User, Servicio
 
 class ClienteSerializer(serializers.ModelSerializer):
     funeraria = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -111,3 +111,18 @@ class ContratoSerializer(serializers.ModelSerializer):
         contrato.trabajadores.set(trabajadores_data)
 
         return contrato
+
+
+class ServicioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Servicio
+        fields = ['id', 'nombre', 'url_imagen', 'descripcion']  # Incluir los campos deseados
+
+
+
+class CotizacionSerializer(serializers.ModelSerializer):
+    servicios = ServicioSerializer(many=True)  # Incluir información detallada de los servicios
+
+    class Meta:
+        model = Cotizacion
+        fields = '__all__'
