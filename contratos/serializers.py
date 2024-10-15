@@ -116,13 +116,17 @@ class ContratoSerializer(serializers.ModelSerializer):
 class ServicioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Servicio
-        fields = ['id', 'nombre', 'url_imagen', 'descripcion']  # Incluir los campos deseados
+        fields = '__all__'
 
-
-
-class CotizacionSerializer(serializers.ModelSerializer):
-    servicios = ServicioSerializer(many=True)  # Incluir información detallada de los servicios
+class CotizacionDetailSerializer(serializers.ModelSerializer):
+    servicios = ServicioSerializer(many=True, read_only=True)
 
     class Meta:
         model = Cotizacion
         fields = '__all__'
+        
+class CotizacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cotizacion
+        fields = '__all__'
+   

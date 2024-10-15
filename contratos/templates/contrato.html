@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrato de Servicios</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1 { text-align: center; }
+        .container { margin: 20px; }
+        .section-title { margin-top: 20px; font-size: 1.2em; font-weight: bold; }
+        .info { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Contrato de Servicios Funerarios</h1>
+
+    <div class="container">
+        <div class="section-title">Información del Cliente</div>
+        <div class="info"><strong>Nombre:</strong> {{ cliente.nombres }} {{ cliente.apellidos }}</div>
+        <div class="info"><strong>RUT:</strong> {{ cliente.rut }}</div>
+        <div class="info"><strong>Teléfono:</strong> {{ cliente.telefono }}</div>
+        <div class="info"><strong>Dirección:</strong> {{ cliente.direccion }}</div>
+
+        <div class="section-title">Información del Fallecido</div>
+        <div class="info"><strong>Nombre:</strong> {{ fallecido.nombres }} {{ fallecido.apellidos }}</div>
+        <div class="info"><strong>Estado Civil:</strong> {{ fallecido.estado_civil }}</div>
+        <div class="info"><strong>Domicilio:</strong> {{ fallecido.domicilio }}</div>
+
+        <div class="section-title">Detalles del Servicio</div>
+        <div class="info"><strong>Fecha de Inicio Velatorio:</strong> {{ contrato.fecha_inicio_velatorio }}</div>
+        <div class="info"><strong>Fecha de Fin Velatorio:</strong> {{ contrato.fecha_fin_velatorio }}</div>
+        <div class="info"><strong>Valor del Servicio:</strong> ${{ contrato.valor_servicio }}</div>
+        <div class="info"><strong>Capilla:</strong> {{ contrato.capilla }}</div>
+
+        <div class="section-title">Inventario</div>
+        <div class="info"><strong>Producto:</strong> {{ inventario.name }}</div>
+        <div class="info"><strong>Precio:</strong> ${{ inventario.price }}</div>
+
+        <div class="section-title">Vehículos</div>
+        <ul>
+            {% for vehiculo in vehiculos %}
+            <li><strong>{{ vehiculo.brand }} {{ vehiculo.model }} ({{ vehiculo.year }})</strong></li>
+            {% endfor %}
+        </ul>
+
+        <div class="section-title">Sala Velatorio</div>
+        <div class="info"><strong>Nombre:</strong> {{ sala_velatorio.nombre }}</div>
+        <div class="info"><strong>Capacidad:</strong> {{ sala_velatorio.capacidad }}</div>
+    </div>
+</body>
+</html>

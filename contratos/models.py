@@ -93,6 +93,7 @@ class Cotizacion(models.Model):
     email_cliente = models.EmailField()
     telefono_cliente = models.CharField(max_length=20)
     descripcion = models.TextField()
+    comentario_interno = models.TextField(null=True, blank=True)
     servicios = models.ManyToManyField(Servicio, related_name='cotizaciones')  # Relación con el modelo Servicio
     estado = models.CharField(max_length=50, choices=ESTADO_CHOICES, default='pendiente')
     fecha_creacion = models.DateTimeField(auto_now_add=True)

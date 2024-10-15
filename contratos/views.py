@@ -10,46 +10,49 @@ from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from datetime import datetime
 from django.utils.timezone import now
-import calendar
 from django.utils.translation import gettext as _
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Cotizacion
-from .serializers import CotizacionSerializer
+from .serializers import CotizacionSerializer, CotizacionDetailSerializer
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa  # Importar xhtml2pdf
+
 class CotizacionViewSet(viewsets.ModelViewSet):
-        queryset = Cotizacion.objects.all()
-        serializer_class = CotizacionSerializer
+    queryset = Cotizacion.objects.all()
+    serializer_class = CotizacionSerializer
 
-        def get_permissions(self):
-            if self.action in ['create']:
-                # Permitir a clientes no registrados crear una cotización
-                return [AllowAny()]
-            return [IsAuthenticated()]
+    def get_permissions(self):
+        if self.action in ['create']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
-        def perform_create(self, serializer):
-            funeraria = self.request.data.get('funeraria')
-            serializer.save(funeraria_id=funeraria)
+    def perform_create(self, serializer):
+        servicios_data = self.request.data.pop('servicios', [])
+        cotizacion = serializer.save()
+        cotizacion.servicios.set(servicios_data)
+        cotizacion.save()
 
-        @action(detail=True, methods=['patch'], url_path='cambiar-estado')
-        def cambiar_estado(self, request, pk=None):
-            cotizacion = self.get_object()
-            nuevo_estado = request.data.get('estado')
-            if nuevo_estado in ['pendiente', 'aprobado', 'rechazado']:
-                cotizacion.estado = nuevo_estado
-                cotizacion.save()
-                return Response({"estado": cotizacion.estado}, status=status.HTTP_200_OK)
-            return Response({"detail": "Estado inválido"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
-        @action(detail=False, methods=['get'], url_path='por-funeraria')
-        def listar_por_funeraria(self, request):
-            # Obtener funeraria del usuario autenticado
-            funeraria_id = request.user.funeraria_id_id
+    @action(detail=True, methods=['patch'], url_path='cambiar-estado')
+    def cambiar_estado(self, request, pk=None):
+        cotizacion = self.get_object()
+        nuevo_estado = request.data.get('estado')
+        if nuevo_estado in ['pendiente', 'aprobado', 'rechazado']:
+            cotizacion.estado = nuevo_estado
+            cotizacion.save()
+            return Response({"estado": cotizacion.estado}, status=status.HTTP_200_OK)
+        return Response({"detail": "Estado inválido"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Filtrar cotizaciones por funeraria_id
-            cotizaciones = Cotizacion.objects.filter(funeraria_id=funeraria_id)
-            serializer = CotizacionSerializer(cotizaciones, many=True, context={'request': request})
-            return Response(serializer.data)
-        
+    @action(detail=False, methods=['get'], url_path='por-funeraria')
+    def listar_por_funeraria(self, request):
+        # Obtener funeraria del usuario autenticado
+        funeraria_id = request.user.funeraria_id_id
+
+        # Filtrar cotizaciones por funeraria_id
+        cotizaciones = Cotizacion.objects.filter(funeraria_id=funeraria_id)
+        serializer = CotizacionDetailSerializer(cotizaciones, many=True, context={'request': request})
+        return Response(serializer.data)
+
 class FallecidoViewSet(viewsets.ModelViewSet):
     queryset = Fallecido.objects.all()
     serializer_class = FallecidoSerializer
@@ -65,15 +68,11 @@ class FallecidoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
-    
-
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
     permission_classes = [IsAuthenticated]
 
-    # Puedes agregar acciones personalizadas aquí si lo necesitas
-    # Por ejemplo, buscar un cliente por su RUT o por otros campos
     @action(detail=False, methods=['get'], url_path='buscar-por-rut')
     def buscar_por_rut(self, request):
         rut = request.query_params.get('rut')
@@ -99,33 +98,19 @@ class ContratoViewSet(viewsets.ModelViewSet):
         funeraria_id = self.request.user.funeraria_id_id
         serializer.save(funeraria_id=funeraria_id)
 
-    def get_serializer_context(self):
-        return {'request': self.request}
-
-    def perform_create(self, serializer):
-        funeraria_id = self.request.user.funeraria_id_id
-        serializer.save(funeraria_id=funeraria_id)
-
-    def get_serializer_context(self):
-        return {'request': self.request}
-
-    def perform_create(self, serializer):
-        funeraria_id = self.request.user.funeraria_id_id
-        serializer.save(funeraria_id=funeraria_id)
-        
     # Nueva acción personalizada para listar contratos con es_traslado=True y filtrados por funeraria_id
     @action(detail=False, methods=['get'], url_path='traslados')
     def listar_traslados(self, request):
         # Obtener funeraria del usuario autenticado
         funeraria_id = self.request.user.funeraria_id_id
-        
+
         # Filtrar contratos por funeraria_id y es_traslado=True
         contratos_traslado = Contrato.objects.filter(funeraria_id=funeraria_id, es_traslado=True)
-        
+
         # Serializar los contratos filtrados
         serializer = self.get_serializer(contratos_traslado, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['post'], url_path='buscar-o-crear-cliente')
     def buscar_o_crear_cliente(self, request):
         rut = request.data.get('rut')
@@ -168,10 +153,8 @@ class ContratoViewSet(viewsets.ModelViewSet):
         fallecido, created = Fallecido.objects.get_or_create(rut=rut, defaults=fallecido_data)
         serializer = FallecidoSerializer(fallecido)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    
-    
-        # Ruta para obtener el total del valor de contratos por estado de pago en el mes actual basado en la funeraria
+
+    # Ruta para obtener el total del valor de contratos por estado de pago en el mes actual basado en la funeraria
     @action(detail=False, methods=['get'], url_path='total-valor-mes-actual')
     def total_valor_mes_actual(self, request):
         funeraria_id = request.user.funeraria_id_id
@@ -207,15 +190,11 @@ class ContratoViewSet(viewsets.ModelViewSet):
             'total_no_pagado': contratos_no_pagados['total_no_pagado'] or 0,
         }, status=status.HTTP_200_OK)
 
-    
     @action(detail=False, methods=['get'], url_path='total-valor-por-mes-ano-actual')
     def total_valor_por_mes_ano_actual(self, request):
         funeraria_id = request.user.funeraria_id_id
         today = now().date()
         current_year = today.year
-
-        # Lista de todos los meses del año actual
-        meses_del_ano = [datetime(current_year, mes, 1) for mes in range(1, 13)]
 
         # Nombres de los meses en español
         meses_esp = [
@@ -260,4 +239,36 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
         return Response(resultados, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['get'], url_path='generar-pdf')
+    def generar_pdf_contrato(self, request, pk=None):
+        # Obtener el contrato por su ID
+        try:
+            contrato = Contrato.objects.get(id=pk)
+        except Contrato.DoesNotExist:
+            return HttpResponse('Contrato no encontrado', status=404)
 
+        # Preparar los datos para el template
+        context = {
+            'contrato': contrato,
+            'cliente': contrato.cliente,
+            'fallecido': contrato.fallecido,
+            'inventario': contrato.inventario,
+            'vehiculos': contrato.vehiculos.all(),
+            'sala_velatorio': contrato.sala_velatorio,
+            'trabajadores': contrato.trabajadores.all(),
+        }
+
+        # Renderizar el template a HTML
+        html_string = render_to_string('contrato.html', context)
+
+        # Crear una respuesta de tipo PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="contrato_{pk}.pdf"'
+
+        # Convertir HTML a PDF usando xhtml2pdf
+        pisa_status = pisa.CreatePDF(html_string, dest=response)
+
+        # Verificar si hubo errores
+        if pisa_status.err:
+            return HttpResponse('Error al generar el PDF', status=500)
+        return response
