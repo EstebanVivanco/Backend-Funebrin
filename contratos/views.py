@@ -16,7 +16,9 @@ from .models import Cotizacion
 from .serializers import CotizacionSerializer, CotizacionDetailSerializer
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa  # Importar xhtml2pdf
+from xhtml2pdf import pisa  
+from datetime import datetime
+import locale
 
 class CotizacionViewSet(viewsets.ModelViewSet):
     queryset = Cotizacion.objects.all()
@@ -241,11 +243,24 @@ class ContratoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='generar-pdf')
     def generar_pdf_contrato(self, request, pk=None):
+        # Configurar el locale para español (es_ES). Asegúrate de que esté disponible en tu sistema.
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para sistemas Unix/Linux
+
         # Obtener el contrato por su ID
         try:
             contrato = Contrato.objects.get(id=pk)
         except Contrato.DoesNotExist:
             return HttpResponse('Contrato no encontrado', status=404)
+
+        # Obtener la fecha actual y formatearla en español
+        fecha_actual = datetime.now().strftime('%d de %B de %Y')
+
+        # Formatear las fechas del contrato
+        fecha_inicio_velatorio = contrato.fecha_inicio_velatorio.strftime('%d de %B de %Y')
+        fecha_fin_velatorio = contrato.fecha_fin_velatorio.strftime('%d de %B de %Y')
+
+        # Formatear el valor del servicio con separadores de miles para CLP
+        valor_servicio = "${:,.0f}".format(contrato.valor_servicio).replace(",", ".")
 
         # Preparar los datos para el template
         context = {
@@ -254,8 +269,13 @@ class ContratoViewSet(viewsets.ModelViewSet):
             'fallecido': contrato.fallecido,
             'inventario': contrato.inventario,
             'vehiculos': contrato.vehiculos.all(),
+            'funeraria': contrato.funeraria,
             'sala_velatorio': contrato.sala_velatorio,
             'trabajadores': contrato.trabajadores.all(),
+            'fecha_actual': fecha_actual,  # Fecha actual en español
+            'fecha_inicio_velatorio': fecha_inicio_velatorio,  # Fecha de inicio del velatorio en español
+            'fecha_fin_velatorio': fecha_fin_velatorio,  # Fecha de fin del velatorio en español
+            'valor_servicio': valor_servicio  # Valor formateado con CLP
         }
 
         # Renderizar el template a HTML

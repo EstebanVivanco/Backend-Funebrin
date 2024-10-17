@@ -1,10 +1,14 @@
 from rest_framework import serializers
-from .models import Cliente, Fallecido, Contrato, Cotizacion
+from .models import Cliente, Fallecido, Contrato, Cotizacion, Funeraria
 from velatorios.models import SalaVelatorio
 from inventario.models import Product
 from vehiculos.models import Vehicle
 from accounts.models import User, Servicio
 
+class FunerariaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Funeraria
+        fields = '__all__'  
 class ClienteSerializer(serializers.ModelSerializer):
     funeraria = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -51,7 +55,7 @@ class ContratoSerializer(serializers.ModelSerializer):
     vehiculos = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all(), many=True)
     sala_velatorio = serializers.PrimaryKeyRelatedField(queryset=SalaVelatorio.objects.all())
     trabajadores = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
-    funeraria = serializers.PrimaryKeyRelatedField(read_only=True)
+    funeraria = FunerariaSerializer()
 
     class Meta:
         model = Contrato

@@ -2,50 +2,91 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Contrato de Servicios</title>
+    <title>Contrato de Servicio Funerario</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        h1 { text-align: center; }
-        .container { margin: 20px; }
-        .section-title { margin-top: 20px; font-size: 1.2em; font-weight: bold; }
-        .info { margin-bottom: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            margin: 30px;
+            font-size: 16px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+        .contract-section {
+            margin-bottom: 10px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        .line {
+            display: inline-block;
+            width: 250px;
+            border-bottom: 1px solid #000;
+        }
+        .long-line {
+            display: inline-block;
+            width: 400px;
+            border-bottom: 1px solid #000;
+        }
+        .signature-line {
+            margin-top: 50px;
+            text-align: center;
+        }
+        .signature-box {
+            display: inline-block;
+            width: 40%;
+        }
+        .signature-space {
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            width: 100%;
+            display: inline-block;
+        }
+        .signature-gap {
+            display: inline-block;
+            width: 10%;
+        }
     </style>
 </head>
 <body>
-    <h1>Contrato de Servicios Funerarios</h1>
+    <div class="header">
+        <h1>Servicios Funerarios</h1>
+        <p>{{funeraria.location}}</p>
+        <p>Funeraria {{funeraria.name}}</p>
+    </div>
 
-    <div class="container">
-        <div class="section-title">Información del Cliente</div>
-        <div class="info"><strong>Nombre:</strong> {{ cliente.nombres }} {{ cliente.apellidos }}</div>
-        <div class="info"><strong>RUT:</strong> {{ cliente.rut }}</div>
-        <div class="info"><strong>Teléfono:</strong> {{ cliente.telefono }}</div>
-        <div class="info"><strong>Dirección:</strong> {{ cliente.direccion }}</div>
+    <h1 style="text-align:center;">CONTRATO DE SERVICIO FUNERARIO</h1>
 
-        <div class="section-title">Información del Fallecido</div>
-        <div class="info"><strong>Nombre:</strong> {{ fallecido.nombres }} {{ fallecido.apellidos }}</div>
-        <div class="info"><strong>Estado Civil:</strong> {{ fallecido.estado_civil }}</div>
-        <div class="info"><strong>Domicilio:</strong> {{ fallecido.domicilio }}</div>
+    <div class="contract-section">
+        <p>A {{fecha_actual}}, el presente contrato de prestación de servicios funerarios se celebra entre la funeraria {{funeraria.name}}, RUT {{funeraria.rut}}, y el contratante, {{ cliente.nombres }} {{ cliente.apellidos }}, RUT {{ cliente.rut }}, domiciliado en {{ cliente.direccion }},</p>
 
-        <div class="section-title">Detalles del Servicio</div>
-        <div class="info"><strong>Fecha de Inicio Velatorio:</strong> {{ contrato.fecha_inicio_velatorio }}</div>
-        <div class="info"><strong>Fecha de Fin Velatorio:</strong> {{ contrato.fecha_fin_velatorio }}</div>
-        <div class="info"><strong>Valor del Servicio:</strong> ${{ contrato.valor_servicio }}</div>
-        <div class="info"><strong>Capilla:</strong> {{ contrato.capilla }}</div>
+        <p>El contratante ha contratado los servicios funerarios para el fallecido {{ fallecido.nombres }} {{ fallecido.apellidos }}, RUT {{ fallecido.rut }}, estado civil {{ fallecido.estado_civil }}, domiciliado en {{ fallecido.domicilio }}, cuyo deceso fue en {{ fallecido.lugar_fallecimiento }}. El servicio incluirá el velatorio en la capilla {{ contrato.capilla }} desde {{ fecha_inicio_velatorio }} hasta {{ fecha_fin_velatorio }}.</p>
+        
+        <p>El lugar final de entierro/cremación será en {{ contrato.cementerio }}. El valor total del servicio tiene un total de {{ valor_servicio }}.</p>
 
-        <div class="section-title">Inventario</div>
-        <div class="info"><strong>Producto:</strong> {{ inventario.name }}</div>
-        <div class="info"><strong>Precio:</strong> ${{ inventario.price }}</div>
+        <p>Condiciones de pago: {{ contrato.condiciones_pago }}.</p>
 
-        <div class="section-title">Vehículos</div>
-        <ul>
-            {% for vehiculo in vehiculos %}
-            <li><strong>{{ vehiculo.brand }} {{ vehiculo.model }} ({{ vehiculo.year }})</strong></li>
-            {% endfor %}
-        </ul>
+        <p>El contratante firma y acepta los términos y condiciones establecidos, y declara que se someterá a la jurisdicción de los tribunales competentes. Toda anulación de este contrato conllevará un cobro del 20% sobre el monto total de los servicios contratados, por daños y perjuicios contractuales en caso de incumplimiento.</p>
 
-        <div class="section-title">Sala Velatorio</div>
-        <div class="info"><strong>Nombre:</strong> {{ sala_velatorio.nombre }}</div>
-        <div class="info"><strong>Capacidad:</strong> {{ sala_velatorio.capacidad }}</div>
+        <p>Conforme a la persona ya mencionada, el contratante firma sin reclamos adicionales sobre el precio o calidad del servicio funerario ofrecido.</p>
+    </div>
+
+    <div class="signature-line">
+        <div class="signature-box">
+            <p>_____________________________</p>
+            <p class="signature-space">Firma Representante Legal</p>
+        </div>
+        <div class="signature-gap"></div> <!-- Espacio entre las dos firmas -->
+        <div class="signature-box">
+            <p>_____________________________</p>
+            <p class="signature-space">Firma Contratante ({{ cliente.rut }})</p>
+        </div>
     </div>
 </body>
 </html>
