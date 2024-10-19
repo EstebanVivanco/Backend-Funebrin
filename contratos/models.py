@@ -26,6 +26,7 @@ class Cliente(models.Model):
     direccion = models.CharField(max_length=255)
     parentezco_con_fallecido = models.CharField(max_length=100)
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
+    tyc = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.nombres} {self.apellidos} - {self.rut}"

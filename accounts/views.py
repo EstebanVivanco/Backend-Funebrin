@@ -31,6 +31,13 @@ class LoginView(APIView):
         user = authenticate(request, email=email, password=password)
         if user is not None:
             token, created = Token.objects.get_or_create(user=user)
+
+            # Serializar los datos de la funeraria
+            funeraria_data = None
+            if user.funeraria_id:
+                funeraria_data = FunerariaSerializer(user.funeraria_id).data
+
+            # Datos del usuario
             user_data = {
                 "id": user.id,
                 "email": user.email,
@@ -39,10 +46,13 @@ class LoginView(APIView):
                 "phone": user.phone,
                 "is_admin": user.is_admin,
                 "is_worker": user.is_worker,
+                "funeraria": funeraria_data  # Incluir los datos de la funeraria
             }
+
             return Response({"token": token.key, "user": user_data}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid Credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @csrf_exempt
 def logout_view(request):

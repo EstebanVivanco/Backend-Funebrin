@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Funeraria, User, Servicio
 
 class UserSerializer(serializers.ModelSerializer):
+    
+    funeraria_id = serializers.ReadOnlyField(source='funeraria_id.id')  
     class Meta:
         model = User
         fields = '__all__'
@@ -41,7 +43,7 @@ class FunerariaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Funeraria
-        fields = ['rut', 'name', 'location', 'phone', 'email', 'logo','phonefijo','admin_email', 'admin_password', 'admin_rut', 'admin_phone', 'servicios']
+        fields = ['id','rut', 'name', 'location', 'phone', 'email', 'logo','phonefijo','admin_email', 'admin_password', 'admin_rut', 'admin_phone', 'servicios', 'tyc']
 
     def create(self, validated_data):
         admin_email = validated_data.pop('admin_email')

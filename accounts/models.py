@@ -33,6 +33,7 @@ class Funeraria(models.Model):
     logo = models.ImageField(storage=MediaStorage(), upload_to=custom_filename_funerarias, null=True, blank=True)
     admin = models.OneToOneField('User', on_delete=models.CASCADE, related_name='funeraria_admin')
     servicios = models.ManyToManyField('Servicio', related_name='funerarias', blank=True)
+    tyc = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
