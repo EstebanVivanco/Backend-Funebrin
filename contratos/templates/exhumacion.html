@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrato de Servicio Funerario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            margin: 30px;
+            font-size: 16px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+        .contract-section {
+            margin-bottom: 10px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        .line {
+            display: inline-block;
+            width: 250px;
+            border-bottom: 1px solid #000;
+        }
+        .long-line {
+            display: inline-block;
+            width: 400px;
+            border-bottom: 1px solid #000;
+        }
+        .signature-line {
+            margin-top: 50px;
+            text-align: center;
+        }
+        .signature-box {
+            display: inline-block;
+            width: 40%;
+        }
+        .signature-space {
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            width: 100%;
+            display: inline-block;
+        }
+        .signature-gap {
+            display: inline-block;
+            width: 10%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Servicios Funerarios</h1>
+        <p>{{ funeraria.location }}</p>
+        <p>Funeraria {{ funeraria.name }}</p>
+    </div>
+
+    <h1 style="text-align:center;">CONTRATO DE SERVICIO EXHUMACIÓN</h1>
+
+    <div class="contract-section">
+        <p>A {{ fecha_actual }}, el presente contrato de prestación de servicios funerarios se celebra entre la {{ funeraria.name }}, RUT {{ funeraria.rut }}, y el contratante, {{ cliente.nombres }} {{ cliente.apellidos }}, RUT {{ cliente.rut }}.</p>
+
+        <p>El contratante ha contratado un servicio de exhumación para el fallecido {{ fallecido.nombres }} {{ fallecido.apellidos }}, RUT {{ fallecido.rut }}. El valor total del servicio es {{ valor_servicio }} CLP.</p>
+
+        <p>Condiciones de pago: {{ exhumacion.comentarios }}.</p>
+
+        <p>{{ funeraria.tyc }}</p>
+    </div>
+
+    <div class="signature-line">
+        <div class="signature-box">
+            <p>_____________________________</p>
+            <p class="signature-space">Firma Representante Legal</p>
+        </div>
+        <div class="signature-gap"></div> <!-- Espacio entre las dos firmas -->
+        <div class="signature-box">
+            <p>_____________________________</p>
+            <p class="signature-space">Firma Contratante ({{ cliente.rut }})</p>
+        </div>
+    </div>
+</body>
+</html>

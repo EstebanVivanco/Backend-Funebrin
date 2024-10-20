@@ -314,6 +314,45 @@ class ExhumacionViewSet(viewsets.ModelViewSet):
             autorizado_por_mausoleo=autorizado_por_mausoleo
         )
 
+    @action(detail=True, methods=['get'], url_path='generar-contrato')
+    def generar_contrato_pdf(self, request, pk=None):
+        # Configurar el locale para español (es_ES). Asegúrate de que esté disponible en tu sistema.
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para sistemas Unix/Linux
+
+        # Obtener la exhumación por su ID
+        try:
+            exhumacion = Exhumacion.objects.get(id=pk)
+        except Exhumacion.DoesNotExist:
+            return HttpResponse('Exhumación no encontrada', status=404)
+
+        # Obtener la fecha actual y formatearla en español
+        fecha_actual = datetime.now().strftime('%d de %B de %Y')
+
+        # Preparar los datos para el template
+        context = {
+            'exhumacion': exhumacion,
+            'cliente': exhumacion.cliente,
+            'fallecido': exhumacion.fallecido,
+            'funeraria': exhumacion.funeraria,
+            'fecha_actual': fecha_actual,
+            'valor_servicio':exhumacion.valor_servicio
+        }
+
+        # Renderizar el template a HTML
+        html_string = render_to_string('exhumacion.html', context)
+
+        # Crear una respuesta de tipo PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="exhumacion_{pk}.pdf"'
+
+        # Convertir HTML a PDF usando xhtml2pdf
+        pisa_status = pisa.CreatePDF(html_string, dest=response)
+
+        # Verificar si hubo errores
+        if pisa_status.err:
+            return HttpResponse('Error al generar el PDF', status=500)
+        return response
+
 
 class ExhumacionDetailViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Exhumacion.objects.all()

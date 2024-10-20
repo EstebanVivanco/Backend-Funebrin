@@ -109,6 +109,7 @@ class Exhumacion(models.Model):
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
     autorizado_por_mausoleo = models.FileField(storage=MediaStorage(), upload_to='exhumaciones/', blank=True, null=True)
     declaracion_jurada_notarial = models.FileField(storage=MediaStorage(), upload_to='exhumaciones/', blank=False)
+    contrato_firmado = models.FileField(storage=MediaStorage(), upload_to='exhumaciones/', blank=True, null=True)
     fecha_solicitud = models.DateField(auto_now_add=True)
     fecha_exhumacion = models.DateField(null=True, blank=True)
     estado = models.CharField(max_length=50, choices=[
@@ -118,6 +119,7 @@ class Exhumacion(models.Model):
         ('rechazado', 'Rechazado'),
     ], default='pendiente')
     comentarios = models.TextField(blank=True, null=True)
+    valor_servicio = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     verificar_retiro_ornamentos = models.BooleanField(default=False)
     servicio_adicional_ornamentos = models.BooleanField(default=False)
 
