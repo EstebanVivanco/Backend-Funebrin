@@ -55,11 +55,13 @@ class ContratoSerializer(serializers.ModelSerializer):
     vehiculos = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all(), many=True)
     sala_velatorio = serializers.PrimaryKeyRelatedField(queryset=SalaVelatorio.objects.all())
     trabajadores = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
-    funeraria = FunerariaSerializer()
+    funeraria = serializers.PrimaryKeyRelatedField(queryset=Funeraria.objects.all())
 
     class Meta:
         model = Contrato
         fields = '__all__'
+        # Elimina 'funeraria' de read_only_fields si está presente
+        # read_only_fields = []
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -68,6 +70,7 @@ class ContratoSerializer(serializers.ModelSerializer):
         data['sala_velatorio'] = SalaVelatorioSerializer(instance.sala_velatorio).data
         data['vehiculos'] = VehiculoSerializer(instance.vehiculos.all(), many=True).data
         data['trabajadores'] = TrabajadorSerializer(instance.trabajadores.all(), many=True).data
+        data['funeraria'] = FunerariaSerializer(instance.funeraria).data  # Agrega esta línea si deseas representar los datos de la funeraria
         return data
 
     def create(self, validated_data):
@@ -77,14 +80,13 @@ class ContratoSerializer(serializers.ModelSerializer):
         cliente = validated_data.pop('cliente')
         inventario = validated_data.pop('inventario')
         sala_velatorio = validated_data.pop('sala_velatorio')
+        funeraria = validated_data.pop('funeraria')  # Obtén funeraria desde validated_data
 
-        funeraria_id = self.context['request'].user.funeraria_id_id
-
-        # Obtain files from request
+        # Obtener archivos de la solicitud
         request = self.context.get('request')
         files = request.FILES
 
-        # Create or update Fallecido, including files
+        # Crear o actualizar Fallecido, incluyendo archivos
         fallecido_serializer = FallecidoSerializer(data=fallecido_data)
         fallecido_serializer.is_valid(raise_exception=True)
         fallecido = fallecido_serializer.save(
@@ -94,28 +96,26 @@ class ContratoSerializer(serializers.ModelSerializer):
             otros_documentos=files.get('otros_documentos'),
         )
 
-        validated_data['funeraria_id'] = funeraria_id
-
-        # Check es_traslado
+        # Verificar es_traslado
         comuna_origen = validated_data.get('comuna_origen')
         comuna_destino = validated_data.get('comuna_destino')
         validated_data['es_traslado'] = comuna_origen != comuna_destino
 
-        # Create Contrato
+        # Crear Contrato
         contrato = Contrato.objects.create(
             cliente=cliente,
             fallecido=fallecido,
             inventario=inventario,
             sala_velatorio=sala_velatorio,
+            funeraria=funeraria,  # Utiliza la funeraria proporcionada
             **validated_data
         )
 
-        # Assign many-to-many fields
+        # Asignar campos many-to-many
         contrato.vehiculos.set(vehiculos_data)
         contrato.trabajadores.set(trabajadores_data)
 
         return contrato
-
 
 class ServicioSerializer(serializers.ModelSerializer):
     class Meta:

@@ -91,14 +91,14 @@ class ContratoViewSet(viewsets.ModelViewSet):
     queryset = Contrato.objects.all()
     serializer_class = ContratoSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Incluir JSONParser
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_serializer_context(self):
         return {'request': self.request}
 
+
     def perform_create(self, serializer):
-        funeraria_id = self.request.user.funeraria_id_id
-        serializer.save(funeraria_id=funeraria_id)
+        serializer.save()
 
     # Nueva acción personalizada para listar contratos con es_traslado=True y filtrados por funeraria_id
     @action(detail=False, methods=['get'], url_path='traslados')
