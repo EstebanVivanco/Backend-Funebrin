@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Contrato, Cliente, Fallecido
-from .serializers import ContratoSerializer, ClienteSerializer, FallecidoSerializer
+from .models import Contrato, Cliente, Fallecido, Exhumacion
+from .serializers import ContratoSerializer, ClienteSerializer, FallecidoSerializer, ExhumacionSerializer, ExhumacionDetailSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -19,7 +19,8 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa  
 from datetime import datetime
 import locale
-
+import json
+from rest_framework import serializers
 class CotizacionViewSet(viewsets.ModelViewSet):
     queryset = Cotizacion.objects.all()
     serializer_class = CotizacionSerializer
@@ -292,3 +293,29 @@ class ContratoViewSet(viewsets.ModelViewSet):
         if pisa_status.err:
             return HttpResponse('Error al generar el PDF', status=500)
         return response
+
+class ExhumacionViewSet(viewsets.ModelViewSet):
+    queryset = Exhumacion.objects.all()
+    serializer_class = ExhumacionSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def perform_create(self, serializer):
+        request = self.request
+        files = request.FILES
+
+        # Handle file uploads
+        declaracion_jurada_notarial = files.get('declaracion_jurada_notarial')
+        autorizado_por_mausoleo = files.get('autorizado_por_mausoleo')
+
+        # Save the instance with uploaded files
+        serializer.save(
+            declaracion_jurada_notarial=declaracion_jurada_notarial,
+            autorizado_por_mausoleo=autorizado_por_mausoleo
+        )
+
+
+class ExhumacionDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Exhumacion.objects.all()
+    serializer_class = ExhumacionDetailSerializer
+    permission_classes = [IsAuthenticated]

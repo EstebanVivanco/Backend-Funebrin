@@ -101,3 +101,25 @@ class Cotizacion(models.Model):
 
     def __str__(self):
         return f"Cotización de {self.nombre_cliente} - Estado: {self.estado}"
+    
+    
+class Exhumacion(models.Model):
+    fallecido = models.ForeignKey(Fallecido, on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
+    funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
+    autorizado_por_mausoleo = models.FileField(storage=MediaStorage(), upload_to='exhumaciones/', blank=True, null=True)
+    declaracion_jurada_notarial = models.FileField(storage=MediaStorage(), upload_to='exhumaciones/', blank=False)
+    fecha_solicitud = models.DateField(auto_now_add=True)
+    fecha_exhumacion = models.DateField(null=True, blank=True)
+    estado = models.CharField(max_length=50, choices=[
+        ('pendiente', 'Pendiente'),
+        ('programado', 'Programado'),
+        ('completado', 'Completado'),
+        ('rechazado', 'Rechazado'),
+    ], default='pendiente')
+    comentarios = models.TextField(blank=True, null=True)
+    verificar_retiro_ornamentos = models.BooleanField(default=False)
+    servicio_adicional_ornamentos = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Exhumación de {self.fallecido.nombres} {self.fallecido.apellidos} - Estado: {self.estado}"

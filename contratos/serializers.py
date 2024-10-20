@@ -1,21 +1,29 @@
 from rest_framework import serializers
-from .models import Cliente, Fallecido, Contrato, Cotizacion, Funeraria
+from .models import Cliente, Fallecido, Contrato, Cotizacion, Funeraria, Exhumacion
 from velatorios.models import SalaVelatorio
 from inventario.models import Product
 from vehiculos.models import Vehicle
 from accounts.models import User, Servicio
+from django.utils import timezone
+import json
 
 class FunerariaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Funeraria
         fields = '__all__'  
 class ClienteSerializer(serializers.ModelSerializer):
-    funeraria = serializers.PrimaryKeyRelatedField(read_only=True)
+    funeraria = serializers.PrimaryKeyRelatedField(queryset=Funeraria.objects.all(), required=False)
 
     class Meta:
         model = Cliente
         fields = '__all__'
-        read_only_fields = ['funeraria']
+
+    def create(self, validated_data):
+        if 'funeraria' not in validated_data or validated_data['funeraria'] is None:
+            validated_data['funeraria'] = self.context['request'].user.funeraria_id
+        return super().create(validated_data)
+
+
 
 class FallecidoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -133,4 +141,104 @@ class CotizacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cotizacion
         fields = '__all__'
-   
+
+class ExhumacionSerializer(serializers.ModelSerializer):
+    cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all(), required=False)
+    fallecido = serializers.PrimaryKeyRelatedField(queryset=Fallecido.objects.all(), required=False)
+    funeraria = serializers.PrimaryKeyRelatedField(queryset=Funeraria.objects.all(), required=False)
+
+    class Meta:
+        model = Exhumacion
+        fields = '__all__'
+
+    def to_internal_value(self, data):
+        # Make a mutable copy of data
+        data = data.copy()
+
+        # Handle 'cliente'
+        cliente_data = data.get('cliente')
+        if cliente_data:
+            if isinstance(cliente_data, str):
+                # Try to parse as JSON
+                try:
+                    cliente_data_parsed = json.loads(cliente_data)
+                    if isinstance(cliente_data_parsed, dict):
+                        # Create Cliente instance
+                        cliente_serializer = ClienteSerializer(data=cliente_data_parsed, context=self.context)
+                        cliente_serializer.is_valid(raise_exception=True)
+                        cliente = cliente_serializer.save()
+                        data['cliente'] = cliente.id
+                    elif cliente_data.isdigit():
+                        data['cliente'] = int(cliente_data)
+                    else:
+                        raise serializers.ValidationError({'cliente': 'Invalid cliente data'})
+                except json.JSONDecodeError:
+                    # Not JSON, could be an ID
+                    if cliente_data.isdigit():
+                        data['cliente'] = int(cliente_data)
+                    else:
+                        raise serializers.ValidationError({'cliente': 'Invalid cliente data'})
+            elif isinstance(cliente_data, dict):
+                cliente_serializer = ClienteSerializer(data=cliente_data, context=self.context)
+                cliente_serializer.is_valid(raise_exception=True)
+                cliente = cliente_serializer.save()
+                data['cliente'] = cliente.id
+            else:
+                raise serializers.ValidationError({'cliente': 'Invalid cliente data'})
+
+        # Handle 'fallecido'
+        fallecido_data = data.get('fallecido')
+        if fallecido_data:
+            if isinstance(fallecido_data, str):
+                # Try to parse as JSON
+                try:
+                    fallecido_data_parsed = json.loads(fallecido_data)
+                    if isinstance(fallecido_data_parsed, dict):
+                        # Create Fallecido instance
+                        fallecido_serializer = FallecidoSerializer(data=fallecido_data_parsed, context=self.context)
+                        fallecido_serializer.is_valid(raise_exception=True)
+                        fallecido = fallecido_serializer.save()
+                        data['fallecido'] = fallecido.id
+                    elif fallecido_data.isdigit():
+                        data['fallecido'] = int(fallecido_data)
+                    else:
+                        raise serializers.ValidationError({'fallecido': 'Invalid fallecido data'})
+                except json.JSONDecodeError:
+                    # Not JSON, could be an ID
+                    if fallecido_data.isdigit():
+                        data['fallecido'] = int(fallecido_data)
+                    else:
+                        raise serializers.ValidationError({'fallecido': 'Invalid fallecido data'})
+            elif isinstance(fallecido_data, dict):
+                fallecido_serializer = FallecidoSerializer(data=fallecido_data, context=self.context)
+                fallecido_serializer.is_valid(raise_exception=True)
+                fallecido = fallecido_serializer.save()
+                data['fallecido'] = fallecido.id
+            else:
+                raise serializers.ValidationError({'fallecido': 'Invalid fallecido data'})
+
+        return super().to_internal_value(data)
+
+    def create(self, validated_data):
+        # Assign 'funeraria' from the authenticated user if not provided
+        if 'funeraria' not in validated_data or validated_data['funeraria'] is None:
+            validated_data['funeraria'] = self.context['request'].user.funeraria_id
+        return super().create(validated_data)
+class ClienteDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+            model = Cliente
+            fields = ['id', 'nombres', 'apellidos', 'rut', 'telefono', 'direccion', 'parentezco_con_fallecido']
+
+class FallecidoDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+            model = Fallecido
+            fields = ['id', 'nombres', 'apellidos', 'rut', 'estado_civil', 'domicilio', 'lugar_fallecimiento', 'prevision']
+
+class ExhumacionDetailSerializer(serializers.ModelSerializer):
+    cliente = ClienteDetailSerializer(read_only=True)
+    fallecido = FallecidoDetailSerializer(read_only=True)
+    funeraria = FunerariaSerializer(read_only=True)
+
+    class Meta:
+        model = Exhumacion
+        fields = '__all__'
