@@ -25,11 +25,9 @@ class Proveedor(models.Model):
     def __str__(self):
         return self.name
 
-class ProductType(models.Model):
-    name = models.CharField(max_length=100)
-    
-    def __str__(self):
-        return self.name
+class InventoryType(models.TextChoices):
+    INTERNO = 'IN', 'Interno'
+    EXTERNO = 'EX', 'Externo'
 
 class Product(models.Model):
     name = models.CharField(max_length=100)
@@ -39,16 +37,39 @@ class Product(models.Model):
     material = models.CharField(max_length=100, null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True)
     vendible = models.BooleanField(default=True)
-    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)  # Campo de proveedor
-    type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
-    funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)  # Nuevo campo para relacionar el producto con la funeraria
-    
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
+    description = models.TextField()
+    funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
+    inventory_type = models.CharField(
+        max_length=2,
+        choices=InventoryType.choices,
+        default=InventoryType.INTERNO
+    )  # Campo para diferenciar el tipo de inventario
+    min_stock_level = models.PositiveIntegerField(default=0)  # Nivel mínimo de stock para alertas
+
     def __str__(self):
         return self.name
+
+class ProductMovement(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+    quantity = models.IntegerField()  # Cantidad positiva o negativa para entradas/salidas
+    description = models.CharField(max_length=255)
+    movement_type = models.CharField(
+        max_length=10,
+        choices=[('Entrada', 'Entrada'), ('Salida', 'Salida')]
+    )
+
+    def __str__(self):
+        return f"{self.movement_type} - {self.product.name} ({self.quantity})"
+
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(storage=MediaStorage(), upload_to=custom_filename_product)
+    is_primary = models.BooleanField(default=False)  # Campo para marcar la imagen principal del producto
+    alt_text = models.CharField(max_length=255, null=True, blank=True)  # Texto alternativo para accesibilidad
+    date_uploaded = models.DateTimeField(auto_now_add=True)  # Fecha de carga de la imagen
 
     def __str__(self):
         return f"Image for {self.product.name}"

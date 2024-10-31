@@ -38,4 +38,6 @@ class CustomTags:
     
     fallecido = extend_schema(tags=['fallecido'])
     
+    productMovement = extend_schema(tags=['productMovement'])
+    
     
