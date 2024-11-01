@@ -3,7 +3,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product,Proveedor, ProductImage, ProductMovement
+from .models import Product, Proveedor, ProductImage, ProductMovement
 from .serializers import (
     ProductSerializer,
     ProveedorSerializer,
@@ -68,7 +68,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(product_serializer.data, status=status.HTTP_200_OK)
 
     def perform_update(self, serializer):
-        funeraria = self.request.user.funeraria
+        funeraria = self.request.user.funeraria_id
         serializer.save(funeraria=funeraria)
 
     # Acción para obtener el total del precio de productos añadidos este mes
@@ -103,9 +103,30 @@ class ProductMovementViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         product = serializer.validated_data['product']
-        if product.funeraria != self.request.user.funeraria:
+        quantity = serializer.validated_data['quantity']
+        
+        if product.funeraria != self.request.user.funeraria_id:
             raise serializers.ValidationError("No tienes permiso para agregar movimientos a este producto.")
+        
+        # Actualizar el stock del producto
+        product.stock += quantity
+        product.save()
+
         serializer.save()
+
+    # Acción personalizada para obtener los movimientos de un producto específico
+    @action(detail=False, methods=['get'], url_path='by-product/(?P<product_id>[^/.]+)')
+    def get_movements_by_product(self, request, product_id=None):
+        funeraria = request.user.funeraria_id
+
+        try:
+            product = Product.objects.get(id=product_id, funeraria=funeraria)
+        except Product.DoesNotExist:
+            return Response({"error": "Producto no encontrado o no tienes permiso para acceder a él."}, status=status.HTTP_404_NOT_FOUND)
+
+        movements = ProductMovement.objects.filter(product=product)
+        serializer = self.get_serializer(movements, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @CustomTags.proveedor
@@ -119,5 +140,3 @@ class ProveedorViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         funeraria = self.request.user.funeraria_id
         serializer.save(funeraria=funeraria)
-
-

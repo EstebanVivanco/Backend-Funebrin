@@ -21,6 +21,9 @@ from datetime import datetime
 import locale
 import json
 from rest_framework import serializers
+from django.db import transaction
+from inventario.models import Product
+
 class CotizacionViewSet(viewsets.ModelViewSet):
     queryset = Cotizacion.objects.all()
     serializer_class = CotizacionSerializer
@@ -35,6 +38,7 @@ class CotizacionViewSet(viewsets.ModelViewSet):
         cotizacion = serializer.save()
         cotizacion.servicios.set(servicios_data)
         cotizacion.save()
+        
 
     @action(detail=True, methods=['patch'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
@@ -97,9 +101,17 @@ class ContratoViewSet(viewsets.ModelViewSet):
     def get_serializer_context(self):
         return {'request': self.request}
 
-
     def perform_create(self, serializer):
-        serializer.save()
+        with transaction.atomic():
+            contrato = serializer.save()
+            producto = contrato.inventario  # Suponiendo que 'inventario' es el campo que relaciona al producto
+            # Bloqueamos el producto para evitar condiciones de carrera
+            producto = Product.objects.select_for_update().get(pk=producto.pk)
+            if producto.stock >= 1:
+                producto.stock -= 1
+                producto.save()
+            else:
+                raise serializers.ValidationError("No hay suficiente stock para el producto seleccionado.")
 
     # Nueva acción personalizada para listar contratos con es_traslado=True y filtrados por funeraria_id
     @action(detail=False, methods=['get'], url_path='traslados')

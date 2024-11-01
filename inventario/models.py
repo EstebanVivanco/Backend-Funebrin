@@ -35,21 +35,25 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
     material = models.CharField(max_length=100, null=True, blank=True)
+    size = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
+    color = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
+    capacity = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
+    wood_type = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
+    style = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
     date_added = models.DateTimeField(auto_now_add=True)
+    tipo_ventidible = models.CharField(max_length=100, null=True, blank=True)  # Cambiado el nombre del campo
     vendible = models.BooleanField(default=True)
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
-    description = models.TextField()
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
     inventory_type = models.CharField(
         max_length=2,
         choices=InventoryType.choices,
         default=InventoryType.INTERNO
-    )  # Campo para diferenciar el tipo de inventario
-    min_stock_level = models.PositiveIntegerField(default=0)  # Nivel mínimo de stock para alertas
+    )
+    min_stock_level = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
-
 class ProductMovement(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
