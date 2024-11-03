@@ -129,6 +129,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='buscar-o-crear-cliente')
     def buscar_o_crear_cliente(self, request):
         rut = request.data.get('rut')
+        print('>>>>>', rut)
         if not rut:
             return Response({"detail": "RUT es obligatorio"}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from accounts.models import Funeraria  # Importar el modelo Funeraria
 
+
+
 class SalaVelatorio(models.Model):
     nombre = models.CharField(max_length=255)
     capacidad = models.PositiveIntegerField()
@@ -25,6 +27,8 @@ class ReservaSala(models.Model):
     sala = models.ForeignKey(SalaVelatorio, on_delete=models.CASCADE, related_name='reservas')
     fecha_inicio = models.DateTimeField()
     fecha_fin = models.DateTimeField()
+    contrato = models.OneToOneField('contratos.Contrato', on_delete=models.CASCADE, related_name='reserva', null=True, blank=True)
+    funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE, related_name='reservas')
 
     def __str__(self):
         return f"Reserva de {self.sala.nombre} del {self.fecha_inicio} al {self.fecha_fin}"
@@ -45,5 +49,7 @@ class ReservaSala(models.Model):
             raise ValidationError("La sala ya está reservada en este periodo.")
 
     def save(self, *args, **kwargs):
+        # Asignar la funeraria automáticamente desde la sala
+        self.funeraria = self.sala.funeraria
         self.full_clean()  # Llama al método clean() antes de guardar
         super().save(*args, **kwargs)

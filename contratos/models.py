@@ -2,7 +2,6 @@ from django.db import models
 from accounts.models import Funeraria, User, Servicio
 from inventario.models import Product
 from vehiculos.models import Vehicle
-from velatorios.models import SalaVelatorio
 from storages.backends.s3boto3 import S3Boto3Storage
 from django.utils import timezone
 
@@ -52,6 +51,8 @@ class Fallecido(models.Model):
 
     def __str__(self):
         return f"{self.nombres} {self.apellidos} - {self.rut}"
+    
+    
 
 class Contrato(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
@@ -60,12 +61,12 @@ class Contrato(models.Model):
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
     vehiculos = models.ManyToManyField(Vehicle)  # Puede haber uno o más vehículos
     trabajadores = models.ManyToManyField(User, null=True, blank=True)  # Trabajadores vinculados al servicio
-    sala_velatorio = models.ForeignKey(SalaVelatorio, on_delete=models.CASCADE, related_name="contratos", null=True, blank=True)
-    fecha_inicio_velatorio = models.DateTimeField()  # Inicio de la ocupación de la sala
-    fecha_fin_velatorio = models.DateTimeField()  # Fin de la ocupación de la sala
+    sala_velatorio = models.ForeignKey('velatorios.SalaVelatorio', on_delete=models.CASCADE, related_name="contratos", null=True, blank=True)
+    fecha_inicio_velatorio = models.DateTimeField(null=True, blank=True)  # Inicio de la ocupación de la sala
+    fecha_fin_velatorio = models.DateTimeField(null=True, blank=True)  # Fin de la ocupación de la sala
     comuna_origen = models.CharField(max_length=100)
     comuna_destino = models.CharField(max_length=100, blank=True, null=True)
-    cementerio_destino = models.CharField(max_length=255)
+    cementerio_destino = models.CharField(max_length=255, blank=True, null=True)
     es_traslado = models.BooleanField(default=False)  # True si la comuna de origen es distinta de la de destino
     valor_servicio = models.DecimalField(max_digits=10, decimal_places=2)
     capilla = models.CharField(max_length=255)
@@ -80,6 +81,23 @@ class Contrato(models.Model):
 
     def __str__(self):
         return f"Contrato {self.id} - Cliente: {self.cliente} - Fallecido: {self.fallecido}"
+    
+    def save(self, *args, **kwargs):
+        super(Contrato, self).save(*args, **kwargs)
+        # Verificar si hay una sala velatorio y fechas asociadas
+        if self.sala_velatorio and self.fecha_inicio_velatorio and self.fecha_fin_velatorio:
+            # Importar ReservaSala dinámicamente
+            from django.apps import apps
+            ReservaSala = apps.get_model('velatorios', 'ReservaSala')
+            # Crear o actualizar la reserva
+            reserva, created = ReservaSala.objects.update_or_create(
+                contrato=self,
+                defaults={
+                    'sala': self.sala_velatorio,
+                    'fecha_inicio': self.fecha_inicio_velatorio,
+                    'fecha_fin': self.fecha_fin_velatorio,
+                }
+            )
 
 
 class Cotizacion(models.Model):

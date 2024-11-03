@@ -6,6 +6,7 @@ from vehiculos.models import Vehicle
 from accounts.models import User, Servicio
 from django.utils import timezone
 import json
+from django.apps import apps
 
 class FunerariaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -57,6 +58,9 @@ class TrabajadorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ContratoSerializer(serializers.ModelSerializer):
+    SalaVelatorio = apps.get_model('velatorios', 'SalaVelatorio')
+    sala_velatorio = serializers.PrimaryKeyRelatedField(queryset=SalaVelatorio.objects.all(), allow_null=True, required=False)
+    
     cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
     fallecido = FallecidoSerializer()
     inventario = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
@@ -124,6 +128,21 @@ class ContratoSerializer(serializers.ModelSerializer):
         contrato.trabajadores.set(trabajadores_data)
 
         return contrato
+    
+    def validate(self, data):
+        sala_velatorio = data.get('sala_velatorio')
+        fecha_inicio = data.get('fecha_inicio_velatorio')
+        fecha_fin = data.get('fecha_fin_velatorio')
+
+        if sala_velatorio:
+            if not fecha_inicio or not fecha_fin:
+                raise serializers.ValidationError("Debe proporcionar las fechas de inicio y fin del velatorio.")
+
+            # Verificar que la sala está disponible
+            if not sala_velatorio.esta_disponible(fecha_inicio, fecha_fin):
+                raise serializers.ValidationError("La sala velatorio seleccionada no está disponible en las fechas indicadas.")
+
+        return data
 
 class ServicioSerializer(serializers.ModelSerializer):
     class Meta:

@@ -8,7 +8,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import datetime
-
+from contratos.serializers import ContratoSerializer
+from django.db.models import Q
 
 class SalaVelatorioViewSet(viewsets.ModelViewSet):
     serializer_class = SalaVelatorioSerializer
@@ -27,7 +28,7 @@ class ReservaSalaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return ReservaSala.objects.filter(sala__funeraria_id=self.request.user.funeraria_id)
+        return ReservaSala.objects.filter(funeraria=self.request.user.funeraria_id)
 
 @api_view(['GET'])
 def salas_disponibles(request):
@@ -55,3 +56,45 @@ def salas_disponibles(request):
 
     serializer = SalaVelatorioSerializer(salas_disponibles, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def salas_ocupadas_hoy(request):
+    hoy = timezone.now().date()
+    reservas_hoy = ReservaSala.objects.filter(
+        Q(fecha_inicio__date__lte=hoy) & Q(fecha_fin__date__gte=hoy),
+        funeraria=request.user.funeraria_id
+    )
+
+    data = []
+    for reserva in reservas_hoy:
+        contrato_serializer = ContratoSerializer(reserva.contrato)
+        data.append({
+            'sala': reserva.sala.nombre,
+            'fecha_inicio': reserva.fecha_inicio,
+            'fecha_fin': reserva.fecha_fin,
+            'contrato': contrato_serializer.data
+        })
+
+    return Response(data)
+
+
+@api_view(['GET'])
+def salas_ocupadas_futuro(request):
+    hoy = timezone.now().date()
+    reservas_futuras = ReservaSala.objects.filter(
+        fecha_inicio__date__gt=hoy,
+        funeraria=request.user.funeraria_id
+    )
+
+    data = []
+    for reserva in reservas_futuras:
+        contrato_serializer = ContratoSerializer(reserva.contrato)
+        data.append({
+            'sala': reserva.sala.nombre,
+            'fecha_inicio': reserva.fecha_inicio,
+            'fecha_fin': reserva.fecha_fin,
+            'contrato': contrato_serializer.data
+        })
+
+    return Response(data)

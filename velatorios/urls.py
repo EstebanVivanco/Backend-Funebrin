@@ -1,8 +1,9 @@
 # velatorios/urls.py
 
 from rest_framework.routers import DefaultRouter
-from .views import SalaVelatorioViewSet, ReservaSalaViewSet, salas_disponibles
+from .views import SalaVelatorioViewSet, ReservaSalaViewSet, salas_disponibles,salas_ocupadas_hoy, salas_ocupadas_futuro
 from django.urls import path
+
 
 router = DefaultRouter()
 router.register(r'salas-velatorio', SalaVelatorioViewSet, basename='sala-velatorio')
@@ -12,4 +13,6 @@ urlpatterns = router.urls
 
 urlpatterns += [
     path('salas-velatorio/disponibles/', salas_disponibles, name='salas-disponibles'),
+    path('salas-ocupadas/hoy/', salas_ocupadas_hoy, name='salas-ocupadas-hoy'),
+    path('salas-ocupadas/futuro/', salas_ocupadas_futuro, name='salas-ocupadas-futuro'),
 ]
