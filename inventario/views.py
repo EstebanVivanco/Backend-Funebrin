@@ -90,6 +90,21 @@ class ProductViewSet(viewsets.ModelViewSet):
         total_price = productos_mes.aggregate(total=Sum('price'))['total'] or 0
 
         return Response({'total_price': total_price}, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], url_path='external-products')
+    def get_external_products(self, request):
+        funeraria = self.request.user.funeraria_id
+        print('>>>>>', self.request.user.funeraria_id)
+        if not funeraria:
+            return Response({"error": "El usuario no tiene una funeraria asociada."}, status=status.HTTP_400_BAD_REQUEST)
+
+        external_products = Product.objects.filter(funeraria=funeraria, inventory_type='IN')
+        
+        if not external_products.exists():
+            return Response({"message": "No se encontraron productos externos para la funeraria asociada."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(external_products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @CustomTags.productMovement
@@ -118,7 +133,7 @@ class ProductMovementViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='by-product/(?P<product_id>[^/.]+)')
     def get_movements_by_product(self, request, product_id=None):
         funeraria = request.user.funeraria_id
-
+        
         try:
             product = Product.objects.get(id=product_id, funeraria=funeraria)
         except Product.DoesNotExist:
@@ -140,3 +155,5 @@ class ProveedorViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         funeraria = self.request.user.funeraria_id
         serializer.save(funeraria=funeraria)
+
+

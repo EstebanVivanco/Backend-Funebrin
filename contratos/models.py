@@ -59,8 +59,8 @@ class Contrato(models.Model):
     inventario = models.ForeignKey(Product, on_delete=models.CASCADE)  # Urna seleccionada
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
     vehiculos = models.ManyToManyField(Vehicle)  # Puede haber uno o más vehículos
-    trabajadores = models.ManyToManyField(User)  # Trabajadores vinculados al servicio
-    sala_velatorio = models.ForeignKey(SalaVelatorio, on_delete=models.CASCADE, related_name="contratos")
+    trabajadores = models.ManyToManyField(User, null=True, blank=True)  # Trabajadores vinculados al servicio
+    sala_velatorio = models.ForeignKey(SalaVelatorio, on_delete=models.CASCADE, related_name="contratos", null=True, blank=True)
     fecha_inicio_velatorio = models.DateTimeField()  # Inicio de la ocupación de la sala
     fecha_fin_velatorio = models.DateTimeField()  # Fin de la ocupación de la sala
     comuna_origen = models.CharField(max_length=100)
