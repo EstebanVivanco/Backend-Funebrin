@@ -1,18 +1,23 @@
-# velatorios/models.py
-
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from accounts.models import Funeraria  # Importar el modelo Funeraria
-
-
+from accounts.models import Funeraria, User  # Importar el modelo Funeraria y User
 
 class SalaVelatorio(models.Model):
     nombre = models.CharField(max_length=255)
     capacidad = models.PositiveIntegerField()
     descripcion = models.TextField(blank=True, null=True)
+    estado = models.BooleanField(default=True)
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE, related_name='salas_velatorio')
-    
+    encargado = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='salas_encargado',
+        limit_choices_to={'is_worker': True}  # Restringir a trabajadores
+    )
+
     def __str__(self):
         return f"{self.nombre} - Capacidad: {self.capacidad}"
 
@@ -22,7 +27,6 @@ class SalaVelatorio(models.Model):
             fecha_fin__gt=fecha_inicio
         )
         return not solapamientos.exists()
-
 class ReservaSala(models.Model):
     sala = models.ForeignKey(SalaVelatorio, on_delete=models.CASCADE, related_name='reservas')
     fecha_inicio = models.DateTimeField()
