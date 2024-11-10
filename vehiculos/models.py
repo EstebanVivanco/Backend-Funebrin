@@ -32,6 +32,7 @@ class Vehicle(models.Model):
     description = models.TextField()
     date_added = models.DateTimeField(auto_now_add=True)
     type = models.ForeignKey('VehicleType', on_delete=models.CASCADE)
+    visible = models.BooleanField(default=True)
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE, related_name='vehiculos', null=True, blank=True)
 
     def __str__(self):

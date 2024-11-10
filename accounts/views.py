@@ -177,15 +177,19 @@ class FunerariaDataView(APIView):
         except Funeraria.DoesNotExist:
             return Response({'error': 'Funeraria no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Obtener los vehículos e inventario asociados a la funeraria
-        vehicles = Vehicle.objects.filter(funeraria=funeraria)
-        products = Product.objects.filter(funeraria=funeraria)
+        # Obtener los vehículos y servicios asociados a la funeraria
+        vehicles = Vehicle.objects.filter(funeraria=funeraria, visible=True)
         services = funeraria.servicios.all()
 
+        # Filtrar solo los productos externos y visibles en el inventario
+        products = Product.objects.filter(funeraria=funeraria, inventory_type='EX', visible=True)
+
+        # Serializar los datos
         vehicle_serializer = VehicleSerializer(vehicles, many=True)
         product_serializer = ProductSerializer(products, many=True)
         servicio_serializer = ServicioSerializer(services, many=True)
         
+        # Preparar la respuesta
         data = {
             'funeraria': {
                 'id': funeraria.id,
@@ -195,10 +199,10 @@ class FunerariaDataView(APIView):
                 'phone': funeraria.phone,
                 'email': funeraria.email,
                 # Agrega otros campos necesarios de la funeraria
-                 'servicios': servicio_serializer.data,
+                'servicios': servicio_serializer.data,
             },
             'vehicles': vehicle_serializer.data,
-            'inventory': product_serializer.data,
+            'inventory': product_serializer.data,  # Solo externos y visibles
         }
 
         return Response(data, status=status.HTTP_200_OK)

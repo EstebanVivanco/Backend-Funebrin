@@ -98,14 +98,38 @@ class ProductViewSet(viewsets.ModelViewSet):
         if not funeraria:
             return Response({"error": "El usuario no tiene una funeraria asociada."}, status=status.HTTP_400_BAD_REQUEST)
 
-        external_products = Product.objects.filter(funeraria=funeraria, inventory_type='IN')
+        external_products = Product.objects.filter(funeraria=funeraria, inventory_type='EX')
         
         if not external_products.exists():
             return Response({"message": "No se encontraron productos externos para la funeraria asociada."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(external_products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+    @action(detail=False, methods=['get'], url_path='visible-external-products/(?P<funeraria_id>[^/.]+)')
+    def get_visible_external_products(self, request, funeraria_id=None):
+        # Validar que el ID de la funeraria fue proporcionado
+        if not funeraria_id:
+            return Response({"error": "Debe proporcionar el ID de la funeraria."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Filtrar productos externos y visibles para la funeraria especificada
+        visible_external_products = Product.objects.filter(
+            funeraria=funeraria_id,
+            inventory_type='EX',
+            visible=True
+        )
+
+        # Comprobar si hay productos que cumplen con el criterio
+        if not visible_external_products.exists():
+            return Response(
+                {"message": "No se encontraron productos externos visibles para la funeraria especificada."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serializar y retornar los productos
+        serializer = self.get_serializer(visible_external_products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @CustomTags.productMovement
 class ProductMovementViewSet(viewsets.ModelViewSet):

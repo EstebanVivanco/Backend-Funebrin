@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
 
 @CustomTags.vehicles
 class VehicleViewSet(viewsets.ModelViewSet):
@@ -46,6 +47,16 @@ class VehicleViewSet(viewsets.ModelViewSet):
             VehicleDocument.objects.create(vehicle=instance, document=document, title=title)
 
         return Response(vehicle_serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], url_path='external-vehicles')
+    def get_external_vehicles(self, request):
+        funeraria_id = request.query_params.get('funeraria_id')
+        if not funeraria_id:
+            return Response({"error": "Debe proporcionar el ID de la funeraria."}, status=status.HTTP_400_BAD_REQUEST)
+
+        vehicles = Vehicle.objects.filter(funeraria_id=funeraria_id, visible=True)
+        serializer = self.get_serializer(vehicles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 @CustomTags.typeVehicle
 class TypeVehicleViewSet(viewsets.ModelViewSet):

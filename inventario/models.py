@@ -43,6 +43,7 @@ class Product(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     tipo_ventidible = models.CharField(max_length=100, null=True, blank=True)  # Cambiado el nombre del campo
     vendible = models.BooleanField(default=True)
+    visible = models.BooleanField(default=True)
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
     funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE)
     inventory_type = models.CharField(
