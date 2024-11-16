@@ -58,32 +58,32 @@ class TrabajadorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ContratoSerializer(serializers.ModelSerializer):
-    SalaVelatorio = apps.get_model('velatorios', 'SalaVelatorio')
-    sala_velatorio = serializers.PrimaryKeyRelatedField(queryset=SalaVelatorio.objects.all(), allow_null=True, required=False)
-    
+    sala_velatorio = serializers.PrimaryKeyRelatedField(
+        queryset=SalaVelatorio.objects.all(),
+        allow_null=True,
+        required=False
+    )
     cliente = serializers.PrimaryKeyRelatedField(queryset=Cliente.objects.all())
     fallecido = FallecidoSerializer()
     inventario = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     vehiculos = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all(), many=True)
-    sala_velatorio = serializers.PrimaryKeyRelatedField(queryset=SalaVelatorio.objects.all())
     trabajadores = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
     funeraria = serializers.PrimaryKeyRelatedField(queryset=Funeraria.objects.all())
 
     class Meta:
         model = Contrato
         fields = '__all__'
-        # Elimina 'funeraria' de read_only_fields si está presente
-        # read_only_fields = []
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['cliente'] = ClienteSerializer(instance.cliente).data
         data['inventario'] = InventarioSerializer(instance.inventario).data
-        data['sala_velatorio'] = SalaVelatorioSerializer(instance.sala_velatorio).data
+        data['sala_velatorio'] = SalaVelatorioSerializer(instance.sala_velatorio).data if instance.sala_velatorio else None
         data['vehiculos'] = VehiculoSerializer(instance.vehiculos.all(), many=True).data
         data['trabajadores'] = TrabajadorSerializer(instance.trabajadores.all(), many=True).data
-        data['funeraria'] = FunerariaSerializer(instance.funeraria).data  # Agrega esta línea si deseas representar los datos de la funeraria
+        data['funeraria'] = FunerariaSerializer(instance.funeraria).data
         return data
+
 
     def create(self, validated_data):
         fallecido_data = validated_data.pop('fallecido')

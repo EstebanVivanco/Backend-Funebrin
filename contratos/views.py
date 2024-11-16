@@ -98,6 +98,12 @@ class ContratoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
+    def get_queryset(self):
+        # Obtener funeraria del usuario autenticado
+        funeraria_id = self.request.user.funeraria_id_id
+        # Filtrar contratos por funeraria_id
+        return Contrato.objects.filter(funeraria_id=funeraria_id)
+
     def get_serializer_context(self):
         return {'request': self.request}
 
@@ -116,13 +122,8 @@ class ContratoViewSet(viewsets.ModelViewSet):
     # Nueva acción personalizada para listar contratos con es_traslado=True y filtrados por funeraria_id
     @action(detail=False, methods=['get'], url_path='traslados')
     def listar_traslados(self, request):
-        # Obtener funeraria del usuario autenticado
         funeraria_id = self.request.user.funeraria_id_id
-
-        # Filtrar contratos por funeraria_id y es_traslado=True
         contratos_traslado = Contrato.objects.filter(funeraria_id=funeraria_id, es_traslado=True)
-
-        # Serializar los contratos filtrados
         serializer = self.get_serializer(contratos_traslado, many=True)
         return Response(serializer.data)
 
@@ -312,6 +313,14 @@ class ExhumacionViewSet(viewsets.ModelViewSet):
     serializer_class = ExhumacionSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    def get_queryset(self):
+        funeraria_id = self.request.user.funeraria_id
+        print(f"Funeraria ID of the user: {funeraria_id}")
+        queryset = Exhumacion.objects.filter(funeraria_id=funeraria_id)
+        print(f"Queryset: {queryset}")
+        return queryset
+
 
     def perform_create(self, serializer):
         request = self.request
@@ -368,6 +377,11 @@ class ExhumacionViewSet(viewsets.ModelViewSet):
 
 
 class ExhumacionDetailViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Exhumacion.objects.all()
     serializer_class = ExhumacionDetailSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Obtener funeraria del usuario autenticado
+        funeraria_id = self.request.user.funeraria_id
+        # Filtrar exhumaciones por funeraria_id
+        return Exhumacion.objects.filter(funeraria_id=funeraria_id)

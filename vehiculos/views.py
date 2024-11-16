@@ -15,6 +15,34 @@ class VehicleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
+    def get_queryset(self):
+        # Filtrar vehículos por la funeraria del usuario autenticado
+        funeraria = self.request.user.funeraria_id_id
+        return Vehicle.objects.filter(funeraria=funeraria)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        data['funeraria'] = request.user.funeraria_id_id
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        instance = serializer.instance
+
+        # Guardar nuevas imágenes
+        images = request.FILES.getlist('images')
+        for image in images:
+            VehicleImage.objects.create(vehicle=instance, image=image)
+
+        # Guardar nuevos documentos con títulos
+        documents = request.FILES.getlist('documents')
+        titles = request.data.getlist('titles', [])
+        for index, document in enumerate(documents):
+            title = titles[index] if index < len(titles) else 'Documento sin título'
+            VehicleDocument.objects.create(vehicle=instance, document=document, title=title)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -47,17 +75,13 @@ class VehicleViewSet(viewsets.ModelViewSet):
             VehicleDocument.objects.create(vehicle=instance, document=document, title=title)
 
         return Response(vehicle_serializer.data, status=status.HTTP_200_OK)
-    
+
     @action(detail=False, methods=['get'], url_path='external-vehicles')
     def get_external_vehicles(self, request):
-        funeraria_id = request.query_params.get('funeraria_id')
-        if not funeraria_id:
-            return Response({"error": "Debe proporcionar el ID de la funeraria."}, status=status.HTTP_400_BAD_REQUEST)
-
-        vehicles = Vehicle.objects.filter(funeraria_id=funeraria_id, visible=True)
+        funeraria = self.request.user.funeraria_id
+        vehicles = Vehicle.objects.filter(funeraria=funeraria, visible=True)
         serializer = self.get_serializer(vehicles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
 @CustomTags.typeVehicle
 class TypeVehicleViewSet(viewsets.ModelViewSet):
     queryset = VehicleType.objects.all()
