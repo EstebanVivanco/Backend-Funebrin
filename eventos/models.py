@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from accounts.models import Funeraria  # Import Funeraria directly
-
 class Event(models.Model):
     EVENT_TYPE_CHOICES = [
         ('personal', 'Personal'),  # Event for the person creating it
