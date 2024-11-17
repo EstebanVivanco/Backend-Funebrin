@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SalaVelatorio, ReservaSala
+from .models import SalaVelatorio, ReservaSala, Condolencia
 
 class SalaVelatorioSerializer(serializers.ModelSerializer):
     funeraria = serializers.PrimaryKeyRelatedField(read_only=True, source='funeraria_id')
@@ -27,3 +27,9 @@ class ReservaSalaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La sala ya está reservada en este periodo.")
 
         return data
+
+class CondolenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Condolencia
+        fields = '__all__'
+        read_only_fields = ('funeraria', 'reserva_sala',)

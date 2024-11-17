@@ -2,7 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from accounts.models import Funeraria, User  # Importar el modelo Funeraria y User
-
+from contratos.models import Fallecido  # Importar el modelo Fallecido
 class SalaVelatorio(models.Model):
     nombre = models.CharField(max_length=255)
     capacidad = models.PositiveIntegerField()
@@ -57,3 +57,15 @@ class ReservaSala(models.Model):
         self.funeraria = self.sala.funeraria
         self.full_clean()  # Llama al método clean() antes de guardar
         super().save(*args, **kwargs)
+        
+
+class Condolencia(models.Model):
+    nombre = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    fallecido = models.ForeignKey(Fallecido, on_delete=models.CASCADE, related_name='condolencias')
+    funeraria = models.ForeignKey(Funeraria, on_delete=models.CASCADE, related_name='condolencias')
+    reserva_sala = models.ForeignKey(ReservaSala, on_delete=models.CASCADE, related_name='condolencias')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Condolencia de {self.nombre} para {self.fallecido}"       

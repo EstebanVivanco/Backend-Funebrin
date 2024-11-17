@@ -104,6 +104,44 @@ class ContratoViewSet(viewsets.ModelViewSet):
         # Filtrar contratos por funeraria_id
         return Contrato.objects.filter(funeraria_id=funeraria_id)
 
+    @action(detail=False, methods=['get'], url_path='velatorios-con-condolencias')
+    def velatorios_con_condolencias(self, request):
+        funeraria_id = request.user.funeraria_id_id
+        contratos = self.get_queryset()
+        serializer = self.get_serializer(contratos, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'], url_path='generar-pdf-condolencias')
+    def generar_pdf_condolencias(self, request, pk=None):
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Asegúrate de que 'es_ES.UTF-8' está disponible en tu sistema
+
+        try:
+            contrato = self.get_object()
+        except Contrato.DoesNotExist:
+            return HttpResponse('Contrato no encontrado', status=404)
+
+        fallecido = contrato.fallecido
+        condolencias = fallecido.condolencias.all()
+        fecha_actual = datetime.now().strftime('%d de %B de %Y')
+
+        context = {
+            'contrato': contrato,
+            'fallecido': fallecido,
+            'condolencias': condolencias,
+            'fecha_actual': fecha_actual,
+        }
+
+        html_string = render_to_string('condolencias.html', context)
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="condolencias.pdf"'
+
+        pisa_status = pisa.CreatePDF(html_string, dest=response)
+
+        if pisa_status.err:
+            return HttpResponse('Error al generar el PDF', status=500)
+        return response
+        
     def get_serializer_context(self):
         return {'request': self.request}
 
@@ -170,6 +208,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         fallecido, created = Fallecido.objects.get_or_create(rut=rut, defaults=fallecido_data)
         serializer = FallecidoSerializer(fallecido)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
     # Ruta para obtener el total del valor de contratos por estado de pago en el mes actual basado en la funeraria
     @action(detail=False, methods=['get'], url_path='total-valor-mes-actual')

@@ -7,6 +7,7 @@ from accounts.models import User, Servicio
 from django.utils import timezone
 import json
 from django.apps import apps
+from velatorios.serializers import CondolenciaSerializer  
 
 class FunerariaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,6 +28,7 @@ class ClienteSerializer(serializers.ModelSerializer):
 
 
 class FallecidoSerializer(serializers.ModelSerializer):
+    condolencias = CondolenciaSerializer(many=True, read_only=True)
     class Meta:
         model = Fallecido
         fields = '__all__'

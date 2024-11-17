@@ -1,16 +1,17 @@
 # velatorios/views.py
 
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from .models import SalaVelatorio, ReservaSala
-from .serializers import SalaVelatorioSerializer, ReservaSalaSerializer
+from rest_framework import viewsets, serializers
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .models import SalaVelatorio, ReservaSala, Condolencia
+from .serializers import SalaVelatorioSerializer, ReservaSalaSerializer, CondolenciaSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import datetime
 from contratos.serializers import ContratoSerializer
 from django.db.models import Q
-
+from accounts.models import Funeraria
+from contratos.models import Fallecido, Contrato
 class SalaVelatorioViewSet(viewsets.ModelViewSet):
     serializer_class = SalaVelatorioSerializer
     permission_classes = [IsAuthenticated]
@@ -98,3 +99,39 @@ def salas_ocupadas_futuro(request):
         })
 
     return Response(data)
+
+class CondolenciaViewSet(viewsets.ModelViewSet):
+    serializer_class = CondolenciaSerializer
+    permission_classes = [AllowAny]  # Permitir a cualquiera dejar una condolencia
+
+    def get_queryset(self):
+        fallecido_id = self.request.query_params.get('fallecido_id')
+        if fallecido_id:
+            return Condolencia.objects.filter(fallecido_id=fallecido_id)
+        else:
+            return Condolencia.objects.all()
+
+    def perform_create(self, serializer):
+        fallecido_id = self.request.data.get('fallecido')
+        if not fallecido_id:
+            raise serializers.ValidationError("El campo 'fallecido' es obligatorio.")
+
+        try:
+            fallecido = Fallecido.objects.get(id=fallecido_id)
+        except Fallecido.DoesNotExist:
+            raise serializers.ValidationError("El fallecido especificado no existe.")
+
+        # Obtener el contrato asociado al fallecido
+        contrato = Contrato.objects.filter(fallecido=fallecido).first()
+        if not contrato:
+            raise serializers.ValidationError("No se encontró un contrato asociado al fallecido.")
+
+        # Obtener la funeraria y la reserva de sala desde el contrato
+        funeraria = contrato.funeraria
+        reserva_sala = contrato.reserva  # 'reserva' es el related_name definido en el modelo Contrato
+
+        if not reserva_sala:
+            raise serializers.ValidationError("No se encontró una reserva de sala asociada al contrato.")
+
+        # Guardar la condolencia con los campos adicionales
+        serializer.save(funeraria=funeraria, reserva_sala=reserva_sala)

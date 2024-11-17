@@ -98,7 +98,7 @@ class Contrato(models.Model):
                     'fecha_fin': self.fecha_fin_velatorio,
                 }
             )
-
+    
 
 class Cotizacion(models.Model):
     ESTADO_CHOICES = [

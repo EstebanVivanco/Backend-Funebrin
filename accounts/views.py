@@ -42,6 +42,7 @@ class LoginView(APIView):
                 "id": user.id,
                 "email": user.email,
                 "username": user.username,
+                "funcion": user.funcion,
                 "rut": user.rut,
                 "phone": user.phone,
                 "is_admin": user.is_admin,

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Libro de Condolencias para {{ fallecido.nombres }} {{ fallecido.apellidos }}</title>
+    <style>
+        @page {
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Times New Roman', serif;
+            background-image: url("file://{{ background_image }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: #333;
+        }
+        .overlay {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 50px;
+            margin: 50px;
+            border-radius: 15px;
+        }
+        h1, h2 {
+            text-align: center;
+            font-family: 'Georgia', serif;
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+        h2 {
+            font-size: 28px;
+            margin-top: 0;
+            color: #555;
+        }
+        .divider {
+            margin: 30px 0;
+            border-top: 2px solid #888;
+        }
+        .condolencia {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+        .condolencia:last-child {
+            border-bottom: none;
+        }
+        .condolencia p {
+            margin: 10px 0;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        .condolencia .nombre {
+            font-weight: bold;
+            font-size: 18px;
+            color: #222;
+        }
+        .fecha {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <h1>En Memoria de</h1>
+        <h2>{{ fallecido.nombres }} {{ fallecido.apellidos }}</h2>
+        <p class="fecha">Fecha: {{ fecha_actual }}</p>
+        {% if condolencias %}
+            {% for condolencia in condolencias %}
+                <div class="condolencia">
+                    <p class="nombre">{{ condolencia.nombre }} escribió:</p>
+                    <p>"{{ condolencia.mensaje }}"</p>
+                    <p class="fecha">{{ condolencia.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No hay condolencias para este velatorio.</p>
+        {% endif %}
+    </div>
+    <div class="footer">
+        &copy; {{ fecha_actual|date:"Y" }} Funeraria {{ contrato.funeraria.nombre }}
+    </div>
+</body>
+</html>
