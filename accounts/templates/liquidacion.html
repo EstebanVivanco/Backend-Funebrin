@@ -1,0 +1,94 @@
+<!-- liquidacion.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Liquidación de Sueldo</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 40px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 24px;
+            color: #333;
+        }
+        .info {
+            margin-bottom: 20px;
+        }
+        .info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .info p strong {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f8f8;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+            color: #333;
+        }
+        td {
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+            color: #555;
+        }
+        .total {
+            font-weight: bold;
+            color: #333;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <h1>Liquidación de Sueldo</h1>
+    <div class="info">
+        <p><strong>Trabajador:</strong> {{ trabajador.first_name }} {{ trabajador.last_name }}</p>
+        <p><strong>RUT:</strong> {{ trabajador.rut }}</p>
+        <p><strong>Banco:</strong> {{ trabajador.banco }}</p>
+        <p><strong>Número de Cuenta:</strong> {{ trabajador.numero_cuenta }}</p>
+        <p><strong>Fecha:</strong> {{ fecha_formateada }}</p>
+    </div>
+    <table>
+        <tr>
+            <th>Detalle</th>
+            <th>Monto</th>
+        </tr>
+        <tr>
+            <td>Sueldo Bruto</td>
+            <td>{{ sueldo_bruto }}</td>
+        </tr>
+        <tr>
+            <td>Descuento de Salud y AFP</td>
+            <td>{{ descuentos }}</td>
+        </tr>
+        <tr>
+            <td class="total">Sueldo Líquido</td>
+            <td class="total">{{ sueldo_liquido }}</td>
+        </tr>
+    </table>
+    <div class="footer">
+        &copy; {{ liquidacion.fecha.year }} {{ funeraria.name }}
+    </div>
+</body>
+</html>

@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Funeraria, User, Servicio
-
+from .models import Funeraria, User, Servicio, LiquidacionSueldo
 class UserSerializer(serializers.ModelSerializer):
     
     funeraria_id = serializers.ReadOnlyField(source='funeraria_id.id')  
@@ -79,3 +78,10 @@ class FunerariaSerializer(serializers.ModelSerializer):
         admin_user.save()
 
         return funeraria
+
+class LiquidacionSueldoSerializer(serializers.ModelSerializer):
+    trabajador = UserSerializer(read_only=True)
+
+    class Meta:
+        model = LiquidacionSueldo
+        fields = '__all__'

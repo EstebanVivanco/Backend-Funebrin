@@ -71,6 +71,9 @@ class User(AbstractUser):
     sistema_salud = models.CharField(max_length=30, null=True, blank=True)
     fecha_contratacion = models.DateField(null=True, blank=True)
     funcion = models.CharField(max_length=100, null=True, blank=True)
+    banco = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
+    tipo_cuenta = models.CharField(max_length=50, null=True, blank=True)  # Nuevo campo
+    numero_cuenta = models.CharField(max_length=50, null=True, blank=True)  # Nuevo campo
 
     groups = None
     user_permissions = None
@@ -81,3 +84,13 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class LiquidacionSueldo(models.Model):
+    trabajador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='liquidaciones')
+    fecha = models.DateField()
+    sueldo_bruto = models.DecimalField(max_digits=10, decimal_places=2)
+    descuentos = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    sueldo_liquido = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"Liquidación de {self.trabajador.get_full_name()} - {self.fecha.strftime('%B %Y')}"
