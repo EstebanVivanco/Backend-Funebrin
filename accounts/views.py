@@ -16,6 +16,11 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 from decimal import Decimal
 from datetime import date
+
+from vehiculos.serializers import VehicleSerializer
+from inventario.serializers import ProductSerializer
+from vehiculos.models import Vehicle
+from inventario.models import Product
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -142,10 +147,20 @@ class FunerariaDataView(APIView):
             funeraria = Funeraria.objects.get(id=funeraria_id)
         except Funeraria.DoesNotExist:
             return Response({'error': 'Funeraria no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
-
-        # Aquí puedes agregar lógica adicional si es necesario
-
-        return Response({'funeraria': FunerariaSerializer(funeraria).data}, status=status.HTTP_200_OK)
+        
+        # Obtener vehículos asociados a la funeraria donde visible es True
+        vehicles = Vehicle.objects.filter(funeraria=funeraria, visible=True)
+        vehicles_serializer = VehicleSerializer(vehicles, many=True)
+        
+        # Obtener inventario asociado a la funeraria donde visible es True
+        inventory_items = Product.objects.filter(funeraria=funeraria, visible=True)
+        inventory_serializer = ProductSerializer(inventory_items, many=True)
+        
+        return Response({
+            'funeraria': FunerariaSerializer(funeraria).data,
+            'vehicles': vehicles_serializer.data,
+            'inventory': inventory_serializer.data
+        }, status=status.HTTP_200_OK)
 
 class LiquidacionSueldoViewSet(viewsets.ModelViewSet):
     queryset = LiquidacionSueldo.objects.all()

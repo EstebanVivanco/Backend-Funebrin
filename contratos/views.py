@@ -76,22 +76,33 @@ class FallecidoViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=400)
 
 class ClienteViewSet(viewsets.ModelViewSet):
-    queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        funeraria_id = self.request.user.funeraria_id_id
+        return Cliente.objects.filter(funeraria_id=funeraria_id)
 
     @action(detail=False, methods=['get'], url_path='buscar-por-rut')
     def buscar_por_rut(self, request):
         rut = request.query_params.get('rut')
+        funeraria_id = request.user.funeraria.id
         if rut:
             try:
-                cliente = Cliente.objects.get(rut=rut)
+                cliente = Cliente.objects.get(rut=rut, funeraria_id=funeraria_id)
                 serializer = self.get_serializer(cliente)
                 return Response(serializer.data)
             except Cliente.DoesNotExist:
                 return Response({"detail": "Cliente no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         return Response({"detail": "RUT es obligatorio"}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], url_path='contrato')
+    def contratos(self, request):
+        funeraria_id = request.user.funeraria.id
+        contratos = Contrato.objects.filter(funeraria_id=funeraria_id)
+        serializer = ContratoSerializer(contratos, many=True)
+        return Response(serializer.data)
+    
 class ContratoViewSet(viewsets.ModelViewSet):
     queryset = Contrato.objects.all()
     serializer_class = ContratoSerializer

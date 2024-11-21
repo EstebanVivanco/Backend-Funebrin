@@ -4,7 +4,7 @@ from .views import ContratoViewSet, ClienteViewSet, FallecidoViewSet, Cotizacion
 
 router = DefaultRouter()
 router.register(r'contratos', ContratoViewSet)
-router.register(r'cliente/contrato', ClienteViewSet)
+router.register(r'cliente/contrato', ClienteViewSet, basename='cliente-contrato')
 router.register(r'fallecido/contrato', FallecidoViewSet)
 router.register(r'cotizaciones', CotizacionViewSet)
 router.register(r'exhumaciones', ExhumacionViewSet)  # Agrega el nuevo ViewSet para exhumaciones

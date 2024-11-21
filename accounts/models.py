@@ -70,7 +70,7 @@ class User(AbstractUser):
     prevision = models.CharField(max_length=100, null=True, blank=True)
     sistema_salud = models.CharField(max_length=30, null=True, blank=True)
     fecha_contratacion = models.DateField(null=True, blank=True)
-    funcion = models.CharField(max_length=100, null=True, blank=True)
+    funcion = models.CharField(max_length=100, null=True, blank=True, default='Administrador')
     banco = models.CharField(max_length=100, null=True, blank=True)  # Nuevo campo
     tipo_cuenta = models.CharField(max_length=50, null=True, blank=True)  # Nuevo campo
     numero_cuenta = models.CharField(max_length=50, null=True, blank=True)  # Nuevo campo
